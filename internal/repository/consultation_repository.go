@@ -1,15 +1,15 @@
-// +build ignore
-
 package repository
 
 import (
 	"context"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/joan/feedback-sys/internal/database"
 	"github.com/joan/feedback-sys/internal/models"
-	"github.com/jackc/pgx/v5"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 )
@@ -17,37 +17,33 @@ import (
 var consultationTracer = otel.Tracer("repository.consultation")
 
 type ConsultationRepository struct {
-	db *database.DB
+	db                *database.DB
+	sessionsCollection *mongo.Collection
+	consultationsCollection *mongo.Collection
 }
 
 func NewConsultationRepository(db *database.DB) *ConsultationRepository {
-	return &ConsultationRepository{db: db}
+	return &ConsultationRepository{
+		db:                      db,
+		sessionsCollection:      db.Collection("consultation_sessions"),
+		consultationsCollection: db.Collection("consultations"),
+	}
 }
 
 // CreateSession creates a new consultation session
-func (r *ConsultationRepository) CreateSession(ctx context.Context, userID uuid.UUID) (*models.ConsultationSession, error) {
+func (r *ConsultationRepository) CreateSession(ctx context.Context, userID primitive.ObjectID) (*models.ConsultationSession, error) {
 	ctx, span := consultationTracer.Start(ctx, "ConsultationRepository.CreateSession")
 	defer span.End()
 
+	now := time.Now()
 	session := &models.ConsultationSession{
-		ID:        uuid.New(),
+		ID:        primitive.NewObjectID(),
 		UserID:    userID,
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
+		CreatedAt: now,
+		UpdatedAt: now,
 	}
 
-	query := `
-		INSERT INTO consultation_sessions (id, user_id, created_at, updated_at)
-		VALUES ($1, $2, $3, $4)
-		RETURNING id, user_id, created_at, updated_at
-	`
-
-	err := r.db.QueryRow(ctx, query,
-		session.ID, session.UserID, session.CreatedAt, session.UpdatedAt,
-	).Scan(
-		&session.ID, &session.UserID, &session.CreatedAt, &session.UpdatedAt,
-	)
-
+	_, err := r.sessionsCollection.InsertOne(ctx, session)
 	if err != nil {
 		span.RecordError(err)
 		return nil, err
@@ -57,26 +53,21 @@ func (r *ConsultationRepository) CreateSession(ctx context.Context, userID uuid.
 }
 
 // GetOrCreateSession gets an existing session or creates a new one
-func (r *ConsultationRepository) GetOrCreateSession(ctx context.Context, userID uuid.UUID, sessionID *uuid.UUID) (*models.ConsultationSession, error) {
+func (r *ConsultationRepository) GetOrCreateSession(ctx context.Context, userID primitive.ObjectID, sessionID *primitive.ObjectID) (*models.ConsultationSession, error) {
 	ctx, span := consultationTracer.Start(ctx, "ConsultationRepository.GetOrCreateSession")
 	defer span.End()
 
 	if sessionID != nil {
 		session := &models.ConsultationSession{}
-		query := `
-			SELECT id, user_id, created_at, updated_at
-			FROM consultation_sessions
-			WHERE id = $1 AND user_id = $2
-		`
-
-		err := r.db.QueryRow(ctx, query, *sessionID, userID).Scan(
-			&session.ID, &session.UserID, &session.CreatedAt, &session.UpdatedAt,
-		)
+		err := r.sessionsCollection.FindOne(ctx, bson.M{
+			"_id":     *sessionID,
+			"user_id": userID,
+		}).Decode(session)
 
 		if err == nil {
 			return session, nil
 		}
-		if err != pgx.ErrNoRows {
+		if err != mongo.ErrNoDocuments {
 			span.RecordError(err)
 			return nil, err
 		}
@@ -90,33 +81,23 @@ func (r *ConsultationRepository) Create(ctx context.Context, consultation *model
 	ctx, span := consultationTracer.Start(ctx, "ConsultationRepository.Create")
 	defer span.End()
 
-	span.SetAttributes(attribute.String("consultation.session_id", consultation.SessionID.String()))
+	span.SetAttributes(attribute.String("consultation.session_id", consultation.SessionID.Hex()))
 
-	consultation.ID = uuid.New()
+	consultation.ID = primitive.NewObjectID()
 	consultation.CreatedAt = time.Now()
 
-	query := `
-		INSERT INTO consultations (id, session_id, user_id, message, response, created_at)
-		VALUES ($1, $2, $3, $4, $5, $6)
-	`
-
-	_, err := r.db.Exec(ctx, query,
-		consultation.ID, consultation.SessionID, consultation.UserID,
-		consultation.Message, consultation.Response, consultation.CreatedAt,
-	)
-
+	_, err := r.consultationsCollection.InsertOne(ctx, consultation)
 	if err != nil {
 		span.RecordError(err)
 		return err
 	}
 
 	// Update session updated_at
-	updateQuery := `
-		UPDATE consultation_sessions
-		SET updated_at = $1
-		WHERE id = $2
-	`
-	_, err = r.db.Exec(ctx, updateQuery, time.Now(), consultation.SessionID)
+	_, err = r.sessionsCollection.UpdateOne(
+		ctx,
+		bson.M{"_id": consultation.SessionID},
+		bson.M{"$set": bson.M{"updated_at": time.Now()}},
+	)
 	if err != nil {
 		span.RecordError(err)
 		return err
@@ -126,38 +107,23 @@ func (r *ConsultationRepository) Create(ctx context.Context, consultation *model
 }
 
 // GetBySessionID retrieves all consultations for a session
-func (r *ConsultationRepository) GetBySessionID(ctx context.Context, sessionID uuid.UUID) ([]*models.Consultation, error) {
+func (r *ConsultationRepository) GetBySessionID(ctx context.Context, sessionID primitive.ObjectID) ([]*models.Consultation, error) {
 	ctx, span := consultationTracer.Start(ctx, "ConsultationRepository.GetBySessionID")
 	defer span.End()
 
-	query := `
-		SELECT id, session_id, user_id, message, response, created_at
-		FROM consultations
-		WHERE session_id = $1
-		ORDER BY created_at ASC
-	`
-
-	rows, err := r.db.Query(ctx, query, sessionID)
+	opts := options.Find().SetSort(bson.D{{Key: "created_at", Value: 1}})
+	cursor, err := r.consultationsCollection.Find(ctx, bson.M{"session_id": sessionID}, opts)
 	if err != nil {
 		span.RecordError(err)
 		return nil, err
 	}
-	defer rows.Close()
+	defer cursor.Close(ctx)
 
 	var consultations []*models.Consultation
-	for rows.Next() {
-		consultation := &models.Consultation{}
-		err := rows.Scan(
-			&consultation.ID, &consultation.SessionID, &consultation.UserID,
-			&consultation.Message, &consultation.Response, &consultation.CreatedAt,
-		)
-		if err != nil {
-			span.RecordError(err)
-			return nil, err
-		}
-		consultations = append(consultations, consultation)
+	if err := cursor.All(ctx, &consultations); err != nil {
+		span.RecordError(err)
+		return nil, err
 	}
 
-	return consultations, rows.Err()
+	return consultations, nil
 }
-

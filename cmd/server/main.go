@@ -56,30 +56,35 @@ func main() {
 	defer db.Close()
 	log.Println("MongoDB connection established")
 
+	// Seed quizzes if needed
+	if err := repository.SeedQuizzes(ctx, db); err != nil {
+		log.Printf("Warning: Failed to seed quizzes: %v", err)
+	} else {
+		log.Println("Quizzes seeded successfully")
+	}
+
 	// Initialize repositories
 	userRepo := repository.NewUserRepository(db)
 	feedbackRepo := repository.NewFeedbackRepository(db)
-	// Temporarily disabled - MongoDB migration in progress
-	// consultationRepo := repository.NewConsultationRepository(db)
-	// moodRepo := repository.NewMoodRepository(db)
-	// quizRepo := repository.NewQuizRepository(db)
-	// quoteRepo := repository.NewQuoteRepository(db)
+	consultationRepo := repository.NewConsultationRepository(db)
+	moodRepo := repository.NewMoodRepository(db)
+	quizRepo := repository.NewQuizRepository(db)
+	quoteRepo := repository.NewQuoteRepository(db)
 
-	// Initialize LLM client (temporarily unused - MongoDB migration in progress)
-	_ = llm.NewClient(cfg.LLM)
+	// Initialize LLM client
+	llmClient := llm.NewClient(cfg.LLM)
 
 	// Initialize services
 	authService := service.NewAuthService(userRepo)
 	feedbackService := service.NewFeedbackService(feedbackRepo)
-	// Temporarily disabled - MongoDB migration in progress
-	// consultationService := service.NewConsultationService(consultationRepo, llmClient)
-	// moodService := service.NewMoodService(moodRepo, quoteRepo, llmClient)
-	// quizService := service.NewQuizService(quizRepo, llmClient)
+	consultationService := service.NewConsultationService(consultationRepo, llmClient)
+	moodService := service.NewMoodService(moodRepo, quoteRepo, llmClient)
+	quizService := service.NewQuizService(quizRepo, llmClient)
 
-	// Load templates (temporarily unused - MongoDB migration in progress)
+	// Load templates
 	tmpl := template.New("")
 	templatePattern := "templates/*.html"
-	_, err = tmpl.ParseGlob(templatePattern)
+	templates, err := tmpl.ParseGlob(templatePattern)
 	if err != nil {
 		log.Fatalf("Failed to load templates: %v", err)
 	}
@@ -93,10 +98,9 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to initialize feedback handler: %v", err)
 	}
-	// Temporarily disabled - MongoDB migration in progress
-	// consultationHandler := handlers.NewConsultationHandler(consultationService, authService)
-	// moodHandler := handlers.NewMoodHandler(moodService, authService, templates)
-	// quizHandler := handlers.NewQuizHandler(quizService, authService, templates)
+	consultationHandler := handlers.NewConsultationHandler(consultationService, authService)
+	moodHandler := handlers.NewMoodHandler(moodService, authService, templates)
+	quizHandler := handlers.NewQuizHandler(quizService, authService, templates)
 
 	// Setup router
 	router := mux.NewRouter()
@@ -111,94 +115,9 @@ func main() {
 	protectedRouter := router.PathPrefix("").Subrouter()
 	protectedRouter.Use(middleware.NewAuthMiddleware(cfg.Server.SessionSecret).RequireAuth)
 	feedbackHandler.RegisterRoutes(protectedRouter)
-	
-	// Placeholder routes for features being migrated to MongoDB
-	protectedRouter.HandleFunc("/mood", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "text/html")
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`<!DOCTYPE html>
-<html>
-<head>
-	<title>Mood Tracking - Coming Soon</title>
-	<link rel="stylesheet" href="/static/css/style.css">
-</head>
-<body>
-	<nav class="navbar">
-		<div class="container">
-			<a href="/dashboard" class="logo">Campus Support</a>
-			<div class="nav-links">
-				<a href="/dashboard">Dashboard</a>
-			</div>
-		</div>
-	</nav>
-	<main class="container">
-		<div class="card">
-			<h1>Mood Tracking</h1>
-			<p>This feature is currently being migrated to MongoDB and will be available soon!</p>
-			<a href="/dashboard" class="btn-primary">Back to Dashboard</a>
-		</div>
-	</main>
-</body>
-</html>`))
-	}).Methods("GET")
-	
-	protectedRouter.HandleFunc("/quizzes", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "text/html")
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`<!DOCTYPE html>
-<html>
-<head>
-	<title>Quizzes - Coming Soon</title>
-	<link rel="stylesheet" href="/static/css/style.css">
-</head>
-<body>
-	<nav class="navbar">
-		<div class="container">
-			<a href="/dashboard" class="logo">Campus Support</a>
-			<div class="nav-links">
-				<a href="/dashboard">Dashboard</a>
-			</div>
-		</div>
-	</nav>
-	<main class="container">
-		<div class="card">
-			<h1>Mental Health Quizzes</h1>
-			<p>This feature is currently being migrated to MongoDB and will be available soon!</p>
-			<a href="/dashboard" class="btn-primary">Back to Dashboard</a>
-		</div>
-	</main>
-</body>
-</html>`))
-	}).Methods("GET")
-	
-	protectedRouter.HandleFunc("/consultation", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "text/html")
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`<!DOCTYPE html>
-<html>
-<head>
-	<title>AI Consultation - Coming Soon</title>
-	<link rel="stylesheet" href="/static/css/style.css">
-</head>
-<body>
-	<nav class="navbar">
-		<div class="container">
-			<a href="/dashboard" class="logo">Campus Support</a>
-			<div class="nav-links">
-				<a href="/dashboard">Dashboard</a>
-			</div>
-		</div>
-	</nav>
-	<main class="container">
-		<div class="card">
-			<h1>AI Consultation</h1>
-			<p>This feature is currently being migrated to MongoDB and will be available soon!</p>
-			<a href="/dashboard" class="btn-primary">Back to Dashboard</a>
-		</div>
-	</main>
-</body>
-</html>`))
-	}).Methods("GET")
+	consultationHandler.RegisterRoutes(protectedRouter)
+	moodHandler.RegisterRoutes(protectedRouter)
+	quizHandler.RegisterRoutes(protectedRouter)
 
 	// Root redirect
 	router.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {

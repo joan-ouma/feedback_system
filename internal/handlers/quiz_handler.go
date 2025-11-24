@@ -1,5 +1,3 @@
-// +build ignore
-
 package handlers
 
 import (
@@ -7,11 +5,11 @@ import (
 	"html/template"
 	"net/http"
 
-	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"github.com/joan/feedback-sys/internal/middleware"
 	"github.com/joan/feedback-sys/internal/models"
 	"github.com/joan/feedback-sys/internal/service"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type QuizHandler struct {
@@ -95,7 +93,7 @@ func (h *QuizHandler) SubmitQuiz(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	quizID, err := uuid.Parse(req.QuizID)
+	quizID, err := primitive.ObjectIDFromHex(req.QuizID)
 	if err != nil {
 		http.Error(w, "Invalid quiz ID", http.StatusBadRequest)
 		return

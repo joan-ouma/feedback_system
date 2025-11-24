@@ -1,47 +1,44 @@
-// +build ignore
-
 package repository
 
 import (
 	"context"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/joan/feedback-sys/internal/database"
 	"github.com/joan/feedback-sys/internal/models"
-	"github.com/jackc/pgx/v5"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.opentelemetry.io/otel"
 )
 
 var quoteTracer = otel.Tracer("repository.quote")
 
 type QuoteRepository struct {
-	db *database.DB
+	db              *database.DB
+	quotesCollection *mongo.Collection
 }
 
 func NewQuoteRepository(db *database.DB) *QuoteRepository {
-	return &QuoteRepository{db: db}
+	return &QuoteRepository{
+		db:               db,
+		quotesCollection: db.Collection("motivational_quotes"),
+	}
 }
 
 // GetQuoteForDate gets a quote for a specific date
-func (r *QuoteRepository) GetQuoteForDate(ctx context.Context, userID uuid.UUID, date time.Time) (*models.MotivationalQuote, error) {
+func (r *QuoteRepository) GetQuoteForDate(ctx context.Context, userID primitive.ObjectID, date time.Time) (*models.MotivationalQuote, error) {
 	ctx, span := quoteTracer.Start(ctx, "QuoteRepository.GetQuoteForDate")
 	defer span.End()
 
 	quote := &models.MotivationalQuote{}
-	query := `
-		SELECT id, user_id, quote, author, mood_type, mood_level, is_ai, created_at, date
-		FROM motivational_quotes
-		WHERE user_id = $1 AND date = $2
-		LIMIT 1
-	`
+	err := r.quotesCollection.FindOne(ctx, bson.M{
+		"user_id": userID,
+		"date":    date,
+	}).Decode(quote)
 
-	err := r.db.QueryRow(ctx, query, userID, date).Scan(
-		&quote.ID, &quote.UserID, &quote.Quote, &quote.Author,
-		&quote.MoodType, &quote.MoodLevel, &quote.IsAI, &quote.CreatedAt, &quote.Date,
-	)
-
-	if err == pgx.ErrNoRows {
+	if err == mongo.ErrNoDocuments {
 		return nil, nil
 	}
 	if err != nil {
@@ -57,23 +54,33 @@ func (r *QuoteRepository) CreateQuote(ctx context.Context, quote *models.Motivat
 	ctx, span := quoteTracer.Start(ctx, "QuoteRepository.CreateQuote")
 	defer span.End()
 
-	quote.ID = uuid.New()
+	quote.ID = primitive.NewObjectID()
 	quote.CreatedAt = time.Now()
 	if quote.Date.IsZero() {
 		quote.Date = time.Now()
 	}
 
-	query := `
-		INSERT INTO motivational_quotes (id, user_id, quote, author, mood_type, mood_level, is_ai, created_at, date)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-		ON CONFLICT DO NOTHING
-	`
+	// Use upsert to avoid duplicates
+	filter := bson.M{
+		"user_id": quote.UserID,
+		"date":    quote.Date,
+	}
+	update := bson.M{
+		"$set": bson.M{
+			"quote":      quote.Quote,
+			"author":     quote.Author,
+			"mood_type":  quote.MoodType,
+			"mood_level": quote.MoodLevel,
+			"is_ai":      quote.IsAI,
+			"created_at": quote.CreatedAt,
+		},
+		"$setOnInsert": bson.M{
+			"_id": quote.ID,
+		},
+	}
+	opts := options.Update().SetUpsert(true)
 
-	_, err := r.db.Exec(ctx, query,
-		quote.ID, quote.UserID, quote.Quote, quote.Author,
-		quote.MoodType, quote.MoodLevel, quote.IsAI, quote.CreatedAt, quote.Date,
-	)
-
+	_, err := r.quotesCollection.UpdateOne(ctx, filter, update, opts)
 	if err != nil {
 		span.RecordError(err)
 		return err
@@ -81,4 +88,3 @@ func (r *QuoteRepository) CreateQuote(ctx context.Context, quote *models.Motivat
 
 	return nil
 }
-

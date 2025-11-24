@@ -1,27 +1,36 @@
-// +build ignore
-
 package repository
 
 import (
 	"context"
-	"encoding/json"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/joan/feedback-sys/internal/database"
 	"github.com/joan/feedback-sys/internal/models"
-	"github.com/jackc/pgx/v5"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.opentelemetry.io/otel"
 )
 
 var quizTracer = otel.Tracer("repository.quiz")
 
 type QuizRepository struct {
-	db *database.DB
+	db                    *database.DB
+	quizzesCollection     *mongo.Collection
+	questionsCollection   *mongo.Collection
+	responsesCollection   *mongo.Collection
+	recommendationsCollection *mongo.Collection
 }
 
 func NewQuizRepository(db *database.DB) *QuizRepository {
-	return &QuizRepository{db: db}
+	return &QuizRepository{
+		db:                         db,
+		quizzesCollection:          db.Collection("quizzes"),
+		questionsCollection:        db.Collection("quiz_questions"),
+		responsesCollection:        db.Collection("quiz_responses"),
+		recommendationsCollection:  db.Collection("quiz_recommendations"),
+	}
 }
 
 // GetQuizByType gets a quiz by its type
@@ -30,18 +39,9 @@ func (r *QuizRepository) GetQuizByType(ctx context.Context, quizType models.Quiz
 	defer span.End()
 
 	quiz := &models.Quiz{}
-	query := `
-		SELECT id, type, title, description, created_at
-		FROM quizzes
-		WHERE type = $1
-		LIMIT 1
-	`
+	err := r.quizzesCollection.FindOne(ctx, bson.M{"type": string(quizType)}).Decode(quiz)
 
-	err := r.db.QueryRow(ctx, query, string(quizType)).Scan(
-		&quiz.ID, &quiz.Type, &quiz.Title, &quiz.Description, &quiz.CreatedAt,
-	)
-
-	if err == pgx.ErrNoRows {
+	if err == mongo.ErrNoDocuments {
 		return nil, nil
 	}
 	if err != nil {
@@ -61,48 +61,25 @@ func (r *QuizRepository) GetQuizByType(ctx context.Context, quizType models.Quiz
 }
 
 // GetQuizQuestions gets all questions for a quiz
-func (r *QuizRepository) GetQuizQuestions(ctx context.Context, quizID uuid.UUID) ([]models.QuizQuestion, error) {
+func (r *QuizRepository) GetQuizQuestions(ctx context.Context, quizID primitive.ObjectID) ([]models.QuizQuestion, error) {
 	ctx, span := quizTracer.Start(ctx, "QuizRepository.GetQuizQuestions")
 	defer span.End()
 
-	query := `
-		SELECT id, quiz_id, question, options, question_type, "order"
-		FROM quiz_questions
-		WHERE quiz_id = $1
-		ORDER BY "order" ASC
-	`
-
-	rows, err := r.db.Query(ctx, query, quizID)
+	opts := options.Find().SetSort(bson.D{{Key: "order", Value: 1}})
+	cursor, err := r.questionsCollection.Find(ctx, bson.M{"quiz_id": quizID}, opts)
 	if err != nil {
 		span.RecordError(err)
 		return nil, err
 	}
-	defer rows.Close()
+	defer cursor.Close(ctx)
 
 	var questions []models.QuizQuestion
-	for rows.Next() {
-		q := models.QuizQuestion{}
-		var optionsJSON []byte
-		err := rows.Scan(
-			&q.ID, &q.QuizID, &q.Question, &optionsJSON, &q.QuestionType, &q.Order,
-		)
-		if err != nil {
-			span.RecordError(err)
-			return nil, err
-		}
-
-		// Parse JSON options
-		if len(optionsJSON) > 0 {
-			if err := json.Unmarshal(optionsJSON, &q.Options); err != nil {
-				span.RecordError(err)
-				return nil, err
-			}
-		}
-
-		questions = append(questions, q)
+	if err := cursor.All(ctx, &questions); err != nil {
+		span.RecordError(err)
+		return nil, err
 	}
 
-	return questions, rows.Err()
+	return questions, nil
 }
 
 // CreateQuizResponse creates a quiz response
@@ -110,25 +87,10 @@ func (r *QuizRepository) CreateQuizResponse(ctx context.Context, response *model
 	ctx, span := quizTracer.Start(ctx, "QuizRepository.CreateQuizResponse")
 	defer span.End()
 
-	response.ID = uuid.New()
+	response.ID = primitive.NewObjectID()
 	response.CreatedAt = time.Now()
 
-	answersJSON, err := json.Marshal(response.Answers)
-	if err != nil {
-		span.RecordError(err)
-		return err
-	}
-
-	query := `
-		INSERT INTO quiz_responses (id, user_id, quiz_id, answers, score, result, created_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7)
-	`
-
-	_, err = r.db.Exec(ctx, query,
-		response.ID, response.UserID, response.QuizID, answersJSON,
-		response.Score, response.Result, response.CreatedAt,
-	)
-
+	_, err := r.responsesCollection.InsertOne(ctx, response)
 	if err != nil {
 		span.RecordError(err)
 		return err
@@ -142,18 +104,10 @@ func (r *QuizRepository) CreateQuizRecommendation(ctx context.Context, rec *mode
 	ctx, span := quizTracer.Start(ctx, "QuizRepository.CreateQuizRecommendation")
 	defer span.End()
 
-	rec.ID = uuid.New()
+	rec.ID = primitive.NewObjectID()
 	rec.CreatedAt = time.Now()
 
-	query := `
-		INSERT INTO quiz_recommendations (id, user_id, quiz_response_id, recommendations, created_at)
-		VALUES ($1, $2, $3, $4, $5)
-	`
-
-	_, err := r.db.Exec(ctx, query,
-		rec.ID, rec.UserID, rec.QuizResponseID, rec.Recommendations, rec.CreatedAt,
-	)
-
+	_, err := r.recommendationsCollection.InsertOne(ctx, rec)
 	if err != nil {
 		span.RecordError(err)
 		return err
@@ -161,4 +115,3 @@ func (r *QuizRepository) CreateQuizRecommendation(ctx context.Context, rec *mode
 
 	return nil
 }
-

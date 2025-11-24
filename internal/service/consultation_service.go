@@ -1,15 +1,13 @@
-// +build ignore
-
 package service
 
 import (
 	"context"
 	"fmt"
 
-	"github.com/google/uuid"
 	"github.com/joan/feedback-sys/internal/llm"
 	"github.com/joan/feedback-sys/internal/models"
 	"github.com/joan/feedback-sys/internal/repository"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.opentelemetry.io/otel"
 )
 
@@ -28,7 +26,7 @@ func NewConsultationService(consultationRepo *repository.ConsultationRepository,
 }
 
 // StartSession creates a new consultation session
-func (s *ConsultationService) StartSession(ctx context.Context, userID uuid.UUID) (*models.ConsultationSession, error) {
+func (s *ConsultationService) StartSession(ctx context.Context, userID primitive.ObjectID) (*models.ConsultationSession, error) {
 	ctx, span := consultationServiceTracer.Start(ctx, "ConsultationService.StartSession")
 	defer span.End()
 
@@ -42,7 +40,7 @@ func (s *ConsultationService) StartSession(ctx context.Context, userID uuid.UUID
 }
 
 // GetOrCreateSession gets an existing session or creates a new one
-func (s *ConsultationService) GetOrCreateSession(ctx context.Context, userID uuid.UUID, sessionID *uuid.UUID) (*models.ConsultationSession, error) {
+func (s *ConsultationService) GetOrCreateSession(ctx context.Context, userID primitive.ObjectID, sessionID *primitive.ObjectID) (*models.ConsultationSession, error) {
 	ctx, span := consultationServiceTracer.Start(ctx, "ConsultationService.GetOrCreateSession")
 	defer span.End()
 
@@ -56,7 +54,7 @@ func (s *ConsultationService) GetOrCreateSession(ctx context.Context, userID uui
 }
 
 // SendMessage sends a message to the LLM and saves the consultation
-func (s *ConsultationService) SendMessage(ctx context.Context, userID uuid.UUID, sessionID uuid.UUID, message string) (*models.Consultation, error) {
+func (s *ConsultationService) SendMessage(ctx context.Context, userID primitive.ObjectID, sessionID primitive.ObjectID, message string) (*models.Consultation, error) {
 	ctx, span := consultationServiceTracer.Start(ctx, "ConsultationService.SendMessage")
 	defer span.End()
 
@@ -101,7 +99,7 @@ func (s *ConsultationService) SendMessage(ctx context.Context, userID uuid.UUID,
 }
 
 // GetSessionHistory retrieves all messages in a session
-func (s *ConsultationService) GetSessionHistory(ctx context.Context, sessionID uuid.UUID) ([]*models.Consultation, error) {
+func (s *ConsultationService) GetSessionHistory(ctx context.Context, sessionID primitive.ObjectID) ([]*models.Consultation, error) {
 	ctx, span := consultationServiceTracer.Start(ctx, "ConsultationService.GetSessionHistory")
 	defer span.End()
 

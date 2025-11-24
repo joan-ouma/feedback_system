@@ -1,15 +1,13 @@
-// +build ignore
-
 package handlers
 
 import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"github.com/joan/feedback-sys/internal/middleware"
 	"github.com/joan/feedback-sys/internal/service"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type ConsultationHandler struct {
@@ -54,9 +52,9 @@ func (h *ConsultationHandler) SendMessage(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	var sessionID uuid.UUID
+	var sessionID primitive.ObjectID
 	if req.SessionID != "" {
-		sessionID, err = uuid.Parse(req.SessionID)
+		sessionID, err = primitive.ObjectIDFromHex(req.SessionID)
 		if err != nil {
 			http.Error(w, "Invalid session ID", http.StatusBadRequest)
 			return
@@ -64,7 +62,11 @@ func (h *ConsultationHandler) SendMessage(w http.ResponseWriter, r *http.Request
 	}
 
 	// Get or create session
-	session, err := h.consultationService.GetOrCreateSession(r.Context(), user.ID, &sessionID)
+	var sessionIDPtr *primitive.ObjectID
+	if req.SessionID != "" {
+		sessionIDPtr = &sessionID
+	}
+	session, err := h.consultationService.GetOrCreateSession(r.Context(), user.ID, sessionIDPtr)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -82,7 +84,7 @@ func (h *ConsultationHandler) SendMessage(w http.ResponseWriter, r *http.Request
 				"consultation": map[string]interface{}{
 					"response": "I'm sorry, but the consultation service is currently unavailable. Please contact your campus mental health services directly for support.",
 				},
-				"session_id": session.ID.String(),
+				"session_id": session.ID.Hex(),
 			})
 			return
 		}
@@ -93,7 +95,7 @@ func (h *ConsultationHandler) SendMessage(w http.ResponseWriter, r *http.Request
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]interface{}{
 		"consultation": consultation,
-		"session_id":   session.ID.String(),
+		"session_id":   session.ID.Hex(),
 	})
 }
 
@@ -112,7 +114,7 @@ func (h *ConsultationHandler) GetHistory(w http.ResponseWriter, r *http.Request)
 	}
 
 	vars := mux.Vars(r)
-	sessionID, err := uuid.Parse(vars["session_id"])
+	sessionID, err := primitive.ObjectIDFromHex(vars["session_id"])
 	if err != nil {
 		http.Error(w, "Invalid session ID", http.StatusBadRequest)
 		return

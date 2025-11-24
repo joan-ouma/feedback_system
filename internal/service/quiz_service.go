@@ -1,5 +1,3 @@
-// +build ignore
-
 package service
 
 import (
@@ -7,10 +5,10 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/google/uuid"
 	"github.com/joan/feedback-sys/internal/llm"
 	"github.com/joan/feedback-sys/internal/models"
 	"github.com/joan/feedback-sys/internal/repository"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.opentelemetry.io/otel"
 )
 
@@ -37,7 +35,7 @@ func (s *QuizService) GetQuiz(ctx context.Context, quizType models.QuizType) (*m
 }
 
 // SubmitQuiz processes quiz answers and generates recommendations
-func (s *QuizService) SubmitQuiz(ctx context.Context, userID uuid.UUID, quizID uuid.UUID, answers map[string]interface{}) (*models.QuizResponse, *models.QuizRecommendation, error) {
+func (s *QuizService) SubmitQuiz(ctx context.Context, userID primitive.ObjectID, quizID primitive.ObjectID, answers map[string]interface{}) (*models.QuizResponse, *models.QuizRecommendation, error) {
 	ctx, span := quizServiceTracer.Start(ctx, "QuizService.SubmitQuiz")
 	defer span.End()
 

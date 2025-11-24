@@ -1,5 +1,3 @@
-// +build ignore
-
 package service
 
 import (
@@ -7,10 +5,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/joan/feedback-sys/internal/llm"
 	"github.com/joan/feedback-sys/internal/models"
 	"github.com/joan/feedback-sys/internal/repository"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.opentelemetry.io/otel"
 )
 
@@ -31,7 +29,7 @@ func NewMoodService(moodRepo *repository.MoodRepository, quoteRepo *repository.Q
 }
 
 // RecordMood records a mood entry and generates recommendations
-func (s *MoodService) RecordMood(ctx context.Context, userID uuid.UUID, moodType models.MoodType, score int, notes string) (*models.MoodEntry, *models.MoodRecommendation, error) {
+func (s *MoodService) RecordMood(ctx context.Context, userID primitive.ObjectID, moodType models.MoodType, score int, notes string) (*models.MoodEntry, *models.MoodRecommendation, error) {
 	ctx, span := moodServiceTracer.Start(ctx, "MoodService.RecordMood")
 	defer span.End()
 
@@ -108,7 +106,7 @@ Format as a numbered list.`, entry.MoodType, entry.MoodLevel, entry.Score, entry
 }
 
 // generateDailyQuote generates a motivational quote based on mood
-func (s *MoodService) generateDailyQuote(ctx context.Context, userID uuid.UUID, moodType models.MoodType, moodLevel models.MoodLevel) error {
+func (s *MoodService) generateDailyQuote(ctx context.Context, userID primitive.ObjectID, moodType models.MoodType, moodLevel models.MoodLevel) error {
 	// Check if quote already exists for today
 	existing, _ := s.quoteRepo.GetQuoteForDate(ctx, userID, time.Now())
 	if existing != nil {
@@ -199,7 +197,7 @@ func (s *MoodService) getCuratedQuote(moodType models.MoodType, moodLevel models
 }
 
 // GetMoodHistory gets mood history for a user
-func (s *MoodService) GetMoodHistory(ctx context.Context, userID uuid.UUID, days int) ([]*models.MoodEntry, error) {
+func (s *MoodService) GetMoodHistory(ctx context.Context, userID primitive.ObjectID, days int) ([]*models.MoodEntry, error) {
 	ctx, span := moodServiceTracer.Start(ctx, "MoodService.GetMoodHistory")
 	defer span.End()
 
@@ -207,7 +205,7 @@ func (s *MoodService) GetMoodHistory(ctx context.Context, userID uuid.UUID, days
 }
 
 // GetTodayMood gets today's mood entry
-func (s *MoodService) GetTodayMood(ctx context.Context, userID uuid.UUID) (*models.MoodEntry, error) {
+func (s *MoodService) GetTodayMood(ctx context.Context, userID primitive.ObjectID) (*models.MoodEntry, error) {
 	ctx, span := moodServiceTracer.Start(ctx, "MoodService.GetTodayMood")
 	defer span.End()
 
@@ -215,7 +213,7 @@ func (s *MoodService) GetTodayMood(ctx context.Context, userID uuid.UUID) (*mode
 }
 
 // GetDailyQuote gets today's motivational quote
-func (s *MoodService) GetDailyQuote(ctx context.Context, userID uuid.UUID) (*models.MotivationalQuote, error) {
+func (s *MoodService) GetDailyQuote(ctx context.Context, userID primitive.ObjectID) (*models.MotivationalQuote, error) {
 	ctx, span := moodServiceTracer.Start(ctx, "MoodService.GetDailyQuote")
 	defer span.End()
 
