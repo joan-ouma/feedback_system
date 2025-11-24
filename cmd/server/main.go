@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -47,6 +48,7 @@ func main() {
 
 	// Initialize database
 	ctx := context.Background()
+	log.Printf("Connecting to MongoDB: %s", maskConnectionString(cfg.Database.URI))
 	db, err := database.NewDB(ctx, cfg.Database.URI)
 	if err != nil {
 		log.Fatalf("Failed to connect to database: %v", err)
@@ -158,6 +160,23 @@ func main() {
 	}
 
 	log.Println("Server exited")
+}
+
+// maskConnectionString masks password in connection string for logging
+func maskConnectionString(uri string) string {
+	// Simple masking - replace password with ***
+	// Format: mongodb+srv://user:password@host
+	if idx := strings.Index(uri, "@"); idx > 0 {
+		if userPassIdx := strings.Index(uri, "://"); userPassIdx > 0 {
+			prefix := uri[:userPassIdx+3]
+			userPass := uri[userPassIdx+3:idx]
+			if colonIdx := strings.Index(userPass, ":"); colonIdx > 0 {
+				user := userPass[:colonIdx]
+				return prefix + user + ":***@" + uri[idx+1:]
+			}
+		}
+	}
+	return uri
 }
 
 // initTracing initializes OpenTelemetry tracing with Jaeger exporter
