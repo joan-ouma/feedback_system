@@ -21,8 +21,13 @@
 
 In Render dashboard, set environment variable:
 - **Key**: `MONGODB_URI`
-- **Value**: Your MongoDB Atlas connection string
-  Example: `mongodb+srv://username:password@cluster.mongodb.net/feedback_sys?retryWrites=true&w=majority`
+- **Value**: `mongodb+srv://joan_test:Redwater710@cluster0.kniyd8u.mongodb.net/feedback_sys?retryWrites=true&w=majority`
+
+**Important:** Also allow network access in MongoDB Atlas:
+1. Go to Network Access in MongoDB Atlas
+2. Click "Add IP Address"
+3. Select "Allow Access from Anywhere" (0.0.0.0/0)
+4. Confirm
 
 ### 3. Deploy
 
