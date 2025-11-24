@@ -24,6 +24,7 @@ func NewConsultationHandler(consultationService *service.ConsultationService, au
 
 // Chat renders the consultation chat page
 func (h *ConsultationHandler) Chat(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/html")
 	http.ServeFile(w, r, "templates/consultation.html")
 }
 

@@ -18,15 +18,32 @@ type AuthMiddleware struct {
 }
 
 func NewAuthMiddleware(sessionSecret string) *AuthMiddleware {
+	store := sessions.NewCookieStore([]byte(sessionSecret))
+	
+	// Configure cookie options for production (HTTPS)
+	store.Options = &sessions.Options{
+		Path:     "/",
+		MaxAge:   86400 * 30, // 30 days
+		HttpOnly: true,
+		Secure:   false, // Will be set to true for HTTPS requests
+		SameSite: http.SameSiteLaxMode, // Works with HTTPS and allows navigation
+	}
+	
 	return &AuthMiddleware{
-		store: sessions.NewCookieStore([]byte(sessionSecret)),
+		store: store,
 	}
 }
 
 // RequireAuth middleware ensures user is authenticated
 func (m *AuthMiddleware) RequireAuth(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		session, _ := m.store.Get(r, "feedback-session")
+		session, err := m.store.Get(r, "feedback-session")
+		if err != nil {
+			// Session error, redirect to signup
+			http.Redirect(w, r, "/signup", http.StatusSeeOther)
+			return
+		}
+		
 		token, ok := session.Values["token"].(string)
 
 		if !ok || token == "" {

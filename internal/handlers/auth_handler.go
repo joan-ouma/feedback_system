@@ -31,9 +31,20 @@ func NewAuthHandler(authService *service.AuthService, sessionSecret string, temp
 		return nil, err
 	}
 
+	store := sessions.NewCookieStore([]byte(sessionSecret))
+	
+	// Configure cookie options for production (HTTPS)
+	store.Options = &sessions.Options{
+		Path:     "/",
+		MaxAge:   86400 * 30, // 30 days
+		HttpOnly: true,
+		Secure:   false, // Set to true in production with HTTPS
+		SameSite: http.SameSiteLaxMode, // Works with HTTPS and allows cross-site navigation
+	}
+
 	return &AuthHandler{
 		authService: authService,
-		store:       sessions.NewCookieStore([]byte(sessionSecret)),
+		store:       store,
 		templates:   templates,
 	}, nil
 }
@@ -41,8 +52,13 @@ func NewAuthHandler(authService *service.AuthService, sessionSecret string, temp
 // SignUp handles anonymous user signup
 func (h *AuthHandler) SignUp(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodGet {
-		// Render signup page
-		http.ServeFile(w, r, "templates/signup.html")
+		// Render signup page using template
+		w.Header().Set("Content-Type", "text/html")
+		if err := h.templates.ExecuteTemplate(w, "signup.html", nil); err != nil {
+			// Fallback to file serve if template not found
+			http.ServeFile(w, r, "templates/signup.html")
+			return
+		}
 		return
 	}
 
@@ -73,11 +89,21 @@ func (h *AuthHandler) SignUp(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Store token in session
-	session, _ := h.store.Get(r, "feedback-session")
+	session, err := h.store.Get(r, "feedback-session")
+	if err != nil {
+		// If session can't be retrieved, create a new one
+		session, _ = h.store.New(r, "feedback-session")
+	}
 	session.Values["token"] = token
 	session.Values["user_id"] = user.ID.String()
+	
+	// Set cookie options for production
+	if r.TLS != nil || r.Header.Get("X-Forwarded-Proto") == "https" {
+		session.Options.Secure = true
+	}
+	
 	if err := session.Save(r, w); err != nil {
-		http.Error(w, "Failed to save session", http.StatusInternalServerError)
+		http.Error(w, "Failed to save session: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -99,7 +125,13 @@ func (h *AuthHandler) SignUp(w http.ResponseWriter, r *http.Request) {
 // Login handles user login with token
 func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodGet {
-		http.ServeFile(w, r, "templates/login.html")
+		// Render login page using template
+		w.Header().Set("Content-Type", "text/html")
+		if err := h.templates.ExecuteTemplate(w, "login.html", nil); err != nil {
+			// Fallback to file serve if template not found
+			http.ServeFile(w, r, "templates/login.html")
+			return
+		}
 		return
 	}
 
@@ -129,11 +161,21 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Store token in session
-	session, _ := h.store.Get(r, "feedback-session")
+	session, err := h.store.Get(r, "feedback-session")
+	if err != nil {
+		// If session can't be retrieved, create a new one
+		session, _ = h.store.New(r, "feedback-session")
+	}
 	session.Values["token"] = req.Token
 	session.Values["user_id"] = user.ID.String()
+	
+	// Set cookie options for production
+	if r.TLS != nil || r.Header.Get("X-Forwarded-Proto") == "https" {
+		session.Options.Secure = true
+	}
+	
 	if err := session.Save(r, w); err != nil {
-		http.Error(w, "Failed to save session", http.StatusInternalServerError)
+		http.Error(w, "Failed to save session: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 

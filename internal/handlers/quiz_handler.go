@@ -126,6 +126,12 @@ func (h *QuizHandler) SubmitQuiz(w http.ResponseWriter, r *http.Request) {
 
 // QuizList renders the quiz selection page
 func (h *QuizHandler) QuizList(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/html")
+	if h.templates != nil {
+		if err := h.templates.ExecuteTemplate(w, "quiz_list.html", nil); err == nil {
+			return
+		}
+	}
 	http.ServeFile(w, r, "templates/quiz_list.html")
 }
 

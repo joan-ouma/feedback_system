@@ -202,6 +202,16 @@ func (h *FeedbackHandler) Dashboard(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate")
 	w.Header().Set("Pragma", "no-cache")
 	w.Header().Set("Expires", "0")
+	w.Header().Set("Content-Type", "text/html")
+	
+	// Try template first, fallback to file serve
+	if h.templates != nil {
+		if err := h.templates.ExecuteTemplate(w, "dashboard.html", nil); err == nil {
+			return
+		}
+	}
+	
+	// Fallback to file serve
 	http.ServeFile(w, r, "templates/dashboard.html")
 }
 

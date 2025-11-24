@@ -158,6 +158,12 @@ func (h *MoodHandler) GetDailyQuote(w http.ResponseWriter, r *http.Request) {
 
 // MoodDashboard renders the mood tracking dashboard
 func (h *MoodHandler) MoodDashboard(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/html")
+	if h.templates != nil {
+		if err := h.templates.ExecuteTemplate(w, "mood_dashboard.html", nil); err == nil {
+			return
+		}
+	}
 	http.ServeFile(w, r, "templates/mood_dashboard.html")
 }
 
