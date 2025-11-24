@@ -73,14 +73,17 @@ func (h *AuthHandler) SignUp(w http.ResponseWriter, r *http.Request) {
 	}
 
 	contentType := r.Header.Get("Content-Type")
+	// HTMX sends form data with Content-Type: application/x-www-form-urlencoded
 	if contentType == "application/json" {
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			log.Printf("JSON decode error: %v", err)
 			http.Error(w, "Invalid request", http.StatusBadRequest)
 			return
 		}
 	} else {
-		// Handle form data
+		// Handle form data (default for HTMX)
 		if err := r.ParseForm(); err != nil {
+			log.Printf("Form parse error: %v", err)
 			http.Error(w, "Invalid request", http.StatusBadRequest)
 			return
 		}
