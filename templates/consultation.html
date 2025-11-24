@@ -257,75 +257,7 @@
             });
         });
         
-        // Handle HTMX response (kept for other HTMX requests, but not used for consultation)
-        document.body.addEventListener('htmx:afterRequest', function(event) {
-            const messageInput = document.getElementById('message-input');
-            const sendBtn = document.querySelector('.send-btn');
-            const loadingIndicator = document.getElementById('loading-indicator');
-            
-            // Hide loading indicator
-            loadingIndicator.classList.remove('show');
-            
-            // Re-enable input and button
-            messageInput.disabled = false;
-            sendBtn.disabled = false;
-            messageInput.focus();
-            
-            if (event.detail.pathInfo.requestPath === '/api/consultation/message') {
-                try {
-                    const response = JSON.parse(event.detail.xhr.responseText);
-                    
-                    if (event.detail.xhr.status === 200 && response.consultation) {
-                        const consultation = response.consultation;
-                        
-                        // Add assistant response
-                        const assistantMessageDiv = document.createElement('div');
-                        assistantMessageDiv.className = 'message assistant';
-                        assistantMessageDiv.innerHTML = `<strong>Counselor:</strong> ${consultation.response}`;
-                        document.getElementById('chat-messages').appendChild(assistantMessageDiv);
-                        
-                        // Update session ID if needed
-                        if (response.session_id) {
-                            sessionId = response.session_id;
-                            document.getElementById('session-id').value = sessionId;
-                        }
-                    } else {
-                        // Show error message from server
-                        const errorMessage = response.consultation?.response || 
-                                           response.error || 
-                                           "I'm sorry, I'm having trouble responding right now. Please try again in a moment.";
-                        
-                        const errorDiv = document.createElement('div');
-                        errorDiv.className = 'message assistant';
-                        errorDiv.style.color = '#d32f2f';
-                        errorDiv.innerHTML = `<strong>Counselor:</strong> ${errorMessage}`;
-                        document.getElementById('chat-messages').appendChild(errorDiv);
-                        
-                        // Log error for debugging
-                        console.error('Consultation error:', response);
-                    }
-                } catch (e) {
-                    // JSON parse error or other error
-                    console.error('Error parsing response:', e, event.detail.xhr.responseText);
-                    const errorDiv = document.createElement('div');
-                    errorDiv.className = 'message assistant';
-                    errorDiv.style.color = '#d32f2f';
-                    errorDiv.innerHTML = `<strong>Counselor:</strong> I'm sorry, I'm having trouble responding right now. Please try again in a moment.`;
-                    document.getElementById('chat-messages').appendChild(errorDiv);
-                }
-                
-                // Scroll to bottom
-                const chatMessages = document.getElementById('chat-messages');
-                chatMessages.scrollTop = chatMessages.scrollHeight;
-            }
-        });
-        
-        // Show loading on request start
-        document.body.addEventListener('htmx:beforeRequest', function(event) {
-            if (event.detail.pathInfo.requestPath === '/api/consultation/message') {
-                document.getElementById('loading-indicator').classList.add('show');
-            }
-        });
+        // HTMX listeners removed - we use fetch API directly for consultation messages
         
         // Update HTMX to send JSON
         document.body.addEventListener('htmx:configRequest', function(event) {

@@ -3,7 +3,7 @@
     <p class="quiz-description">{{.quiz.Description}}</p>
     
     <form id="quiz-form" onsubmit="submitQuiz(event)">
-        <input type="hidden" name="quiz_id" value="{{.quiz.ID}}">
+        <input type="hidden" name="quiz_id" id="quiz-id-input" value="{{.quiz.ID}}">
         
         {{range $qIndex, $question := .quiz.Questions}}
         <div class="quiz-question">
@@ -35,7 +35,7 @@
 function submitQuiz(e) {
     e.preventDefault();
     const formData = new FormData(e.target);
-    const quizId = formData.get('quiz_id');
+    const quizId = document.getElementById('quiz-id-input').value || formData.get('quiz_id');
     const answers = {};
     
     for (let [key, value] of formData.entries()) {
@@ -44,7 +44,13 @@ function submitQuiz(e) {
         }
     }
     
-    const content = document.getElementById('quiz-content');
+    // Find the quiz container - try multiple possible IDs
+    const content = document.getElementById('quiz-content') || 
+                   document.querySelector('.quiz-form') || 
+                   document.querySelector('main') ||
+                   document.body;
+    
+    const originalContent = content.innerHTML;
     content.innerHTML = '<div class="loading">Submitting quiz...</div>';
     
     fetch('/api/quiz/submit', {
@@ -61,34 +67,67 @@ function submitQuiz(e) {
     })
     .then(response => {
         if (!response.ok) {
-            throw new Error('Failed to submit quiz');
+            return response.json().then(err => Promise.reject(err));
         }
         return response.json();
     })
     .then(data => {
+        console.log('Quiz response data:', data);
+        
         let html = `
-            <h2>Quiz Results</h2>
-            <div class="quiz-result">
-                <p><strong>Score:</strong> ${data.response.score}/10</p>
-                <p><strong>Result:</strong> ${data.response.result}</p>
+            <div class="quiz-results-container">
+                <h2>Quiz Results</h2>
+                <div class="quiz-result">
         `;
+        
+        if (data.response) {
+            html += `
+                <p><strong>Score:</strong> ${data.response.score || 'N/A'}</p>
+                <p><strong>Result:</strong> ${data.response.result || 'No result available'}</p>
+            `;
+        } else {
+            html += `<p>Quiz submitted successfully!</p>`;
+        }
         
         if (data.recommendation && data.recommendation.recommendations) {
             html += `
-                <div class="recommendations-box">
-                    <h4>Personalized Recommendations:</h4>
-                    <div class="recommendations-content">${data.recommendation.recommendations.replace(/\n/g, '<br>')}</div>
+                <div class="recommendations-box" style="margin-top: 20px; padding: 15px; background: #f0f8ff; border-left: 4px solid #007bff; border-radius: 4px;">
+                    <h4 style="margin-top: 0;">Personalized Recommendations:</h4>
+                    <div class="recommendations-content" style="white-space: pre-wrap;">${escapeHtml(data.recommendation.recommendations)}</div>
+                </div>
+            `;
+        } else {
+            html += `
+                <div class="recommendations-box" style="margin-top: 20px; padding: 15px; background: #fff3cd; border-left: 4px solid #ffc107; border-radius: 4px;">
+                    <p style="margin: 0; color: #856404;">Recommendations are being generated. Please check back later or refresh the page.</p>
                 </div>
             `;
         }
         
-        html += '</div>';
+        html += `
+                </div>
+                <a href="/quizzes" class="btn-primary" style="margin-top: 20px; display: inline-block;">Take Another Quiz</a>
+            </div>
+        `;
+        
         content.innerHTML = html;
     })
     .catch(error => {
         console.error('Error submitting quiz:', error);
-        content.innerHTML = '<div class="error">Failed to submit quiz. Please try again.</div>';
+        let errorMsg = 'Failed to submit quiz. Please try again.';
+        if (error.error) {
+            errorMsg = error.error;
+        } else if (error.message) {
+            errorMsg = error.message;
+        }
+        content.innerHTML = `<div class="error" style="padding: 15px; background: #f8d7da; color: #721c24; border-radius: 4px;">${escapeHtml(errorMsg)}</div>`;
     });
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
 }
 </script>
 

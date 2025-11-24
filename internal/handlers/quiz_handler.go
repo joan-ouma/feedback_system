@@ -3,7 +3,9 @@ package handlers
 import (
 	"encoding/json"
 	"html/template"
+	"log"
 	"net/http"
+	"strings"
 
 	"github.com/gorilla/mux"
 	"github.com/joan/feedback-sys/internal/middleware"
@@ -56,11 +58,20 @@ func (h *QuizHandler) GetQuiz(w http.ResponseWriter, r *http.Request) {
 
 	if r.Header.Get("HX-Request") == "true" {
 		w.Header().Set("Content-Type", "text/html")
-		data := map[string]interface{}{
-			"quiz": quiz,
+		// Convert ObjectID to hex string for template
+		quizData := map[string]interface{}{
+			"quiz": map[string]interface{}{
+				"ID":          quiz.ID.Hex(),
+				"Type":        quiz.Type,
+				"Title":       quiz.Title,
+				"Description": quiz.Description,
+				"Questions":   quiz.Questions,
+				"CreatedAt":   quiz.CreatedAt,
+			},
 		}
-		if err := h.templates.ExecuteTemplate(w, "quiz.html", data); err != nil {
-			http.Error(w, "Template error", http.StatusInternalServerError)
+		if err := h.templates.ExecuteTemplate(w, "quiz.html", quizData); err != nil {
+			log.Printf("❌ Template error: %v", err)
+			http.Error(w, "Template error: "+err.Error(), http.StatusInternalServerError)
 		}
 		return
 	}
@@ -88,9 +99,29 @@ func (h *QuizHandler) SubmitQuiz(w http.ResponseWriter, r *http.Request) {
 		Answers map[string]interface{} `json:"answers"`
 	}
 
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Invalid request", http.StatusBadRequest)
-		return
+	// Support both JSON and form data
+	contentType := r.Header.Get("Content-Type")
+	if strings.Contains(contentType, "application/json") {
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			http.Error(w, "Invalid request: "+err.Error(), http.StatusBadRequest)
+			return
+		}
+	} else {
+		// Parse form data
+		if err := r.ParseForm(); err != nil {
+			http.Error(w, "Invalid request: "+err.Error(), http.StatusBadRequest)
+			return
+		}
+		req.QuizID = r.FormValue("quiz_id")
+		// Parse answers from form
+		req.Answers = make(map[string]interface{})
+		for key, values := range r.Form {
+			if key != "quiz_id" {
+				if len(values) > 0 {
+					req.Answers[key] = values[0]
+				}
+			}
+		}
 	}
 
 	quizID, err := primitive.ObjectIDFromHex(req.QuizID)
@@ -105,23 +136,25 @@ func (h *QuizHandler) SubmitQuiz(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if r.Header.Get("HX-Request") == "true" {
-		w.Header().Set("Content-Type", "text/html")
-		data := map[string]interface{}{
-			"response":      response,
-			"recommendation": recommendation,
-		}
-		if err := h.templates.ExecuteTemplate(w, "quiz_results.html", data); err != nil {
-			http.Error(w, "Template error", http.StatusInternalServerError)
-		}
+	// Always return JSON (frontend handles rendering)
+	w.Header().Set("Content-Type", "application/json")
+	
+	result := map[string]interface{}{
+		"response": response,
+	}
+	
+	if recommendation != nil {
+		result["recommendation"] = recommendation
+		log.Printf("✅ Quiz recommendation: %s", recommendation.Recommendations)
+	} else {
+		log.Printf("⚠️  No recommendation generated for quiz response")
+	}
+	
+	if err := json.NewEncoder(w).Encode(result); err != nil {
+		log.Printf("❌ Error encoding quiz response: %v", err)
+		http.Error(w, "Error encoding response", http.StatusInternalServerError)
 		return
 	}
-
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]interface{}{
-		"response":      response,
-		"recommendation": recommendation,
-	})
 }
 
 // QuizList renders the quiz selection page
