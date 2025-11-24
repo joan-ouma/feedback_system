@@ -97,9 +97,10 @@ func (h *AuthHandler) SignUp(w http.ResponseWriter, r *http.Request) {
 	session.Values["token"] = token
 	session.Values["user_id"] = user.ID.String()
 	
-	// Set cookie options for production
-	if r.TLS != nil || r.Header.Get("X-Forwarded-Proto") == "https" {
+	// Set cookie options for production (HTTPS detection)
+	if r.TLS != nil || r.Header.Get("X-Forwarded-Proto") == "https" || r.Header.Get("X-Forwarded-Ssl") == "on" {
 		session.Options.Secure = true
+		session.Options.SameSite = http.SameSiteLaxMode
 	}
 	
 	if err := session.Save(r, w); err != nil {
@@ -169,9 +170,10 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	session.Values["token"] = req.Token
 	session.Values["user_id"] = user.ID.String()
 	
-	// Set cookie options for production
-	if r.TLS != nil || r.Header.Get("X-Forwarded-Proto") == "https" {
+	// Set cookie options for production (HTTPS detection)
+	if r.TLS != nil || r.Header.Get("X-Forwarded-Proto") == "https" || r.Header.Get("X-Forwarded-Ssl") == "on" {
 		session.Options.Secure = true
+		session.Options.SameSite = http.SameSiteLaxMode
 	}
 	
 	if err := session.Save(r, w); err != nil {

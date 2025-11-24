@@ -21,11 +21,12 @@ func NewAuthMiddleware(sessionSecret string) *AuthMiddleware {
 	store := sessions.NewCookieStore([]byte(sessionSecret))
 	
 	// Configure cookie options for production (HTTPS)
+	// Secure will be set dynamically based on request
 	store.Options = &sessions.Options{
 		Path:     "/",
 		MaxAge:   86400 * 30, // 30 days
 		HttpOnly: true,
-		Secure:   false, // Will be set to true for HTTPS requests
+		Secure:   false, // Set dynamically for HTTPS
 		SameSite: http.SameSiteLaxMode, // Works with HTTPS and allows navigation
 	}
 	
@@ -37,6 +38,11 @@ func NewAuthMiddleware(sessionSecret string) *AuthMiddleware {
 // RequireAuth middleware ensures user is authenticated
 func (m *AuthMiddleware) RequireAuth(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Update cookie options for HTTPS if needed
+		if r.TLS != nil || r.Header.Get("X-Forwarded-Proto") == "https" || r.Header.Get("X-Forwarded-Ssl") == "on" {
+			m.store.Options.Secure = true
+		}
+		
 		session, err := m.store.Get(r, "feedback-session")
 		if err != nil {
 			// Session error, redirect to signup
