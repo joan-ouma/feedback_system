@@ -1,8 +1,10 @@
 package config
 
 import (
+	"log"
 	"os"
 	"strconv"
+	"strings"
 
 	"github.com/joho/godotenv"
 )
@@ -39,9 +41,23 @@ func Load() (*Config, error) {
 	// Try to load .env file, but don't fail if it doesn't exist
 	_ = godotenv.Load()
 
+	// Debug: Log environment variables (masked)
+	mongoURI := getEnv("MONGODB_URI", "")
+	if mongoURI == "" {
+		mongoURI = getEnv("DATABASE_URL", "")
+	}
+	if mongoURI == "" {
+		mongoURI = "mongodb://localhost:27017/feedback_sys" // Default fallback
+		log.Println("⚠️  WARNING: MONGODB_URI not set, using default localhost")
+	} else {
+		// Mask password in log
+		maskedURI := maskURI(mongoURI)
+		log.Printf("✅ Using MongoDB URI: %s", maskedURI)
+	}
+
 	cfg := &Config{
 		Database: DatabaseConfig{
-			URI: getEnv("MONGODB_URI", getEnv("DATABASE_URL", "mongodb://localhost:27017/feedback_sys")), // Support both for migration
+			URI: mongoURI,
 		},
 		Server: ServerConfig{
 			Port:          getEnv("PORT", "8080"),
@@ -79,5 +95,21 @@ func getEnvAsBool(key string, defaultValue bool) bool {
 		return defaultValue
 	}
 	return value
+}
+
+// maskURI masks password in MongoDB connection string for logging
+func maskURI(uri string) string {
+	// Format: mongodb+srv://user:password@host
+	if idx := strings.Index(uri, "@"); idx > 0 {
+		if userPassIdx := strings.Index(uri, "://"); userPassIdx > 0 {
+			prefix := uri[:userPassIdx+3]
+			userPass := uri[userPassIdx+3:idx]
+			if colonIdx := strings.Index(userPass, ":"); colonIdx > 0 {
+				user := userPass[:colonIdx]
+				return prefix + user + ":***@" + uri[idx+1:]
+			}
+		}
+	}
+	return uri
 }
 
