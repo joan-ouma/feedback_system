@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -98,10 +99,16 @@ func (c *Client) Chat(ctx context.Context, conversationHistory []Message, userMe
 		))
 	defer span.End()
 
-	// Check if using Gemini API
-	if strings.Contains(c.apiURL, "generativelanguage.googleapis.com") {
+	// Check if using Gemini API (by URL or model name)
+	isGemini := strings.Contains(c.apiURL, "generativelanguage.googleapis.com") || 
+	            strings.HasPrefix(strings.ToLower(c.model), "gemini")
+	
+	if isGemini {
+		log.Printf("🔵 Detected Gemini API (URL: %s, Model: %s)", c.apiURL, c.model)
 		return c.chatGemini(ctx, conversationHistory, userMessage)
 	}
+	
+	log.Printf("🔵 Using OpenAI-compatible API (URL: %s, Model: %s)", c.apiURL, c.model)
 
 	// Build messages with system prompt (OpenAI format)
 	messages := []Message{
@@ -225,12 +232,17 @@ func (c *Client) chatGemini(ctx context.Context, conversationHistory []Message, 
 	contents := []GeminiContent{}
 	
 	// Add conversation history
+	// Gemini uses "user" and "model" roles (not "assistant")
 	for _, msg := range conversationHistory {
+		role := msg.Role
+		if role == "assistant" {
+			role = "model" // Gemini uses "model" instead of "assistant"
+		}
 		contents = append(contents, GeminiContent{
 			Parts: []struct {
 				Text string `json:"text"`
 			}{{Text: msg.Content}},
-			Role: msg.Role,
+			Role: role,
 		})
 	}
 	
@@ -244,15 +256,6 @@ func (c *Client) chatGemini(ctx context.Context, conversationHistory []Message, 
 
 	geminiReq := GeminiRequest{
 		Contents: contents,
-		SystemInstruction: &struct {
-			Parts []struct {
-				Text string `json:"text"`
-			} `json:"parts"`
-		}{
-			Parts: []struct {
-				Text string `json:"text"`
-			}{{Text: c.systemPrompt}},
-		},
 		GenerationConfig: struct {
 			Temperature float64 `json:"temperature,omitempty"`
 			MaxOutputTokens int `json:"maxOutputTokens,omitempty"`
@@ -260,6 +263,19 @@ func (c *Client) chatGemini(ctx context.Context, conversationHistory []Message, 
 			Temperature: 0.7,
 			MaxOutputTokens: 1000,
 		},
+	}
+	
+	// Add system instruction if provided (some Gemini models support it)
+	if c.systemPrompt != "" {
+		geminiReq.SystemInstruction = &struct {
+			Parts []struct {
+				Text string `json:"text"`
+			} `json:"parts"`
+		}{
+			Parts: []struct {
+				Text string `json:"text"`
+			}{{Text: c.systemPrompt}},
+		}
 	}
 
 	jsonData, err := json.Marshal(geminiReq)
@@ -274,6 +290,9 @@ func (c *Client) chatGemini(ctx context.Context, conversationHistory []Message, 
 		modelName = "gemini-pro"
 	}
 	endpoint := fmt.Sprintf("%s/models/%s:generateContent?key=%s", c.apiURL, modelName, c.apiKey)
+	log.Printf("🔵 Calling Gemini API: %s (model: %s)", endpoint, modelName)
+	log.Printf("🔵 Request body: %s", string(jsonData))
+	
 	req, err := http.NewRequestWithContext(ctx, "POST", endpoint, bytes.NewBuffer(jsonData))
 	if err != nil {
 		span.RecordError(err)
@@ -297,6 +316,7 @@ func (c *Client) chatGemini(ctx context.Context, conversationHistory []Message, 
 
 	if resp.StatusCode != http.StatusOK {
 		span.SetAttributes(attribute.Int("http.status_code", resp.StatusCode))
+		log.Printf("❌ Gemini API error - Status: %d, Response: %s", resp.StatusCode, string(body))
 		span.RecordError(fmt.Errorf("Gemini API error: %s", string(body)))
 		return "", fmt.Errorf("Gemini API returned status %d: %s", resp.StatusCode, string(body))
 	}
@@ -317,17 +337,25 @@ func (c *Client) chatGemini(ctx context.Context, conversationHistory []Message, 
 
 	var geminiResp GeminiResponse
 	if err := json.Unmarshal(body, &geminiResp); err != nil {
+		log.Printf("❌ Failed to unmarshal Gemini response: %v, Body: %s", err, string(body))
 		span.RecordError(err)
 		return "", fmt.Errorf("failed to unmarshal Gemini response: %w", err)
 	}
 
 	if geminiResp.Error != nil {
+		log.Printf("❌ Gemini API error in response: %s", geminiResp.Error.Message)
 		span.RecordError(fmt.Errorf("Gemini API error: %s", geminiResp.Error.Message))
 		return "", fmt.Errorf("Gemini API error: %s", geminiResp.Error.Message)
 	}
 
-	if len(geminiResp.Candidates) == 0 || len(geminiResp.Candidates[0].Content.Parts) == 0 {
-		return "", fmt.Errorf("no response from Gemini")
+	if len(geminiResp.Candidates) == 0 {
+		log.Printf("❌ No candidates in Gemini response. Full response: %s", string(body))
+		return "", fmt.Errorf("no candidates in Gemini response")
+	}
+
+	if len(geminiResp.Candidates[0].Content.Parts) == 0 {
+		log.Printf("❌ No parts in Gemini candidate. Full response: %s", string(body))
+		return "", fmt.Errorf("no response content from Gemini")
 	}
 
 	response := geminiResp.Candidates[0].Content.Parts[0].Text

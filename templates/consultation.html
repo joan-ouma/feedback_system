@@ -196,23 +196,41 @@
             messageInput.focus();
             
             if (event.detail.pathInfo.requestPath === '/api/consultation/message') {
-                if (event.detail.xhr.status === 200) {
+                try {
                     const response = JSON.parse(event.detail.xhr.responseText);
-                    const consultation = response.consultation;
                     
-                    // Add assistant response
-                    const assistantMessageDiv = document.createElement('div');
-                    assistantMessageDiv.className = 'message assistant';
-                    assistantMessageDiv.innerHTML = `<strong>Counselor:</strong> ${consultation.response}`;
-                    document.getElementById('chat-messages').appendChild(assistantMessageDiv);
-                    
-                    // Update session ID if needed
-                    if (response.session_id) {
-                        sessionId = response.session_id;
-                        document.getElementById('session-id').value = sessionId;
+                    if (event.detail.xhr.status === 200 && response.consultation) {
+                        const consultation = response.consultation;
+                        
+                        // Add assistant response
+                        const assistantMessageDiv = document.createElement('div');
+                        assistantMessageDiv.className = 'message assistant';
+                        assistantMessageDiv.innerHTML = `<strong>Counselor:</strong> ${consultation.response}`;
+                        document.getElementById('chat-messages').appendChild(assistantMessageDiv);
+                        
+                        // Update session ID if needed
+                        if (response.session_id) {
+                            sessionId = response.session_id;
+                            document.getElementById('session-id').value = sessionId;
+                        }
+                    } else {
+                        // Show error message from server
+                        const errorMessage = response.consultation?.response || 
+                                           response.error || 
+                                           "I'm sorry, I'm having trouble responding right now. Please try again in a moment.";
+                        
+                        const errorDiv = document.createElement('div');
+                        errorDiv.className = 'message assistant';
+                        errorDiv.style.color = '#d32f2f';
+                        errorDiv.innerHTML = `<strong>Counselor:</strong> ${errorMessage}`;
+                        document.getElementById('chat-messages').appendChild(errorDiv);
+                        
+                        // Log error for debugging
+                        console.error('Consultation error:', response);
                     }
-                } else {
-                    // Show error message
+                } catch (e) {
+                    // JSON parse error or other error
+                    console.error('Error parsing response:', e, event.detail.xhr.responseText);
                     const errorDiv = document.createElement('div');
                     errorDiv.className = 'message assistant';
                     errorDiv.style.color = '#d32f2f';

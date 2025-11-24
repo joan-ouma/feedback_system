@@ -2,7 +2,9 @@ package handlers
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
+	"strings"
 
 	"github.com/gorilla/mux"
 	"github.com/joan/feedback-sys/internal/middleware"
@@ -75,8 +77,10 @@ func (h *ConsultationHandler) SendMessage(w http.ResponseWriter, r *http.Request
 	// Send message
 	consultation, err := h.consultationService.SendMessage(r.Context(), user.ID, session.ID, req.Message)
 	if err != nil {
+		log.Printf("❌ Consultation error: %v", err)
+		
 		// Check if it's an API key error
-		if err.Error() == "LLM API key is not configured. Please set LLM_API_KEY in your environment variables" {
+		if strings.Contains(err.Error(), "LLM API key is not configured") || strings.Contains(err.Error(), "API key") {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusServiceUnavailable)
 			json.NewEncoder(w).Encode(map[string]interface{}{
@@ -88,7 +92,17 @@ func (h *ConsultationHandler) SendMessage(w http.ResponseWriter, r *http.Request
 			})
 			return
 		}
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		
+		// Return error details for debugging (in production, you might want to hide this)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"error": err.Error(),
+			"consultation": map[string]interface{}{
+				"response": "I'm sorry, I'm having trouble responding right now. Please try again in a moment.",
+			},
+			"session_id": session.ID.Hex(),
+		})
 		return
 	}
 
