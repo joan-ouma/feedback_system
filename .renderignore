@@ -1,0 +1,17 @@
+# Render ignore file
+.env
+.env.local
+*.log
+tmp/
+temp/
+.git/
+.vscode/
+.idea/
+*.swp
+*.swo
+node_modules/
+bin/
+dist/
+*.test
+*.out
+

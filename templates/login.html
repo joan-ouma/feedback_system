@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Campus Mental Health Support</title>
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <div class="auth-container">
+        <div class="auth-card">
+            <h1>Login</h1>
+            <p class="subtitle">Enter your anonymous token to continue</p>
+            
+            <div id="login-form">
+                <form hx-post="/login" hx-target="#login-form" hx-swap="outerHTML">
+                    <div class="form-group">
+                        <label for="token">Your Token</label>
+                        <input type="text" id="token" name="token" placeholder="Paste your token here" required>
+                        <small>This is the token you received when you signed up. Check your browser's local storage if you saved it.</small>
+                    </div>
+                    
+                    <button type="submit" class="btn-primary">Login</button>
+                </form>
+            </div>
+            
+            <div class="auth-footer">
+                <p>Don't have a token? <a href="/signup">Sign up here</a></p>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Try to load token from localStorage
+        window.addEventListener('DOMContentLoaded', function() {
+            const savedToken = localStorage.getItem('anonymous_token');
+            if (savedToken) {
+                document.getElementById('token').value = savedToken;
+            }
+        });
+        
+        document.body.addEventListener('htmx:afterRequest', function(event) {
+            if (event.detail.xhr.status === 200 && event.detail.xhr.getResponseHeader('HX-Redirect')) {
+                window.location.href = event.detail.xhr.getResponseHeader('HX-Redirect');
+            }
+        });
+    </script>
+</body>
+</html>
+

@@ -1,0 +1,22 @@
+{{if .Feedbacks}}
+<div class="feedbacks-container">
+    {{range .Feedbacks}}
+    <div class="feedback-card">
+        <div class="feedback-header">
+            <span class="feedback-type">{{.TypeLabel}}</span>
+            <span class="feedback-status status-{{.Status}}">{{.Status}}</span>
+        </div>
+        <h3 class="feedback-title">{{.Title}}</h3>
+        <p class="feedback-content">{{.Content}}</p>
+        <div class="feedback-footer">
+            <small class="feedback-date">Submitted on {{.CreatedAtFormatted}}</small>
+        </div>
+    </div>
+    {{end}}
+</div>
+{{else}}
+<div class="empty-state">
+    <p>No feedbacks yet. Submit your first feedback using the form on the left!</p>
+</div>
+{{end}}
+

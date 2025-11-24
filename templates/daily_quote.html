@@ -1,0 +1,14 @@
+{{if .quote}}
+<div class="quote-content">
+    <blockquote class="quote-text">"{{.quote.Quote}}"</blockquote>
+    <cite class="quote-author">— {{.quote.Author}}</cite>
+    {{if .quote.IsAI}}
+    <small class="quote-note">✨ Personalized for you</small>
+    {{end}}
+</div>
+{{else}}
+<div class="quote-content">
+    <p>Complete your mood entry to receive a personalized motivational quote!</p>
+</div>
+{{end}}
+

@@ -1,0 +1,31 @@
+services:
+  - type: web
+    name: feedback-sys
+    env: go
+    plan: free
+    buildCommand: go mod download && go build -o bin/server cmd/server/main.go
+    startCommand: ./bin/server
+    envVars:
+      - key: PORT
+        value: 8080
+      - key: DATABASE_URL
+        sync: false  # Set this in Render dashboard
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: LLM_API_KEY
+        sync: false  # Set this in Render dashboard
+      - key: LLM_API_URL
+        value: https://api.openai.com/v1
+      - key: LLM_MODEL
+        value: gpt-4
+      - key: ENABLE_TRACING
+        value: false
+      - key: JAEGER_ENDPOINT
+        value: http://localhost:14268/api/traces
+
+databases:
+  - name: feedback-sys-db
+    plan: free
+    databaseName: feedback_sys
+    user: feedback_user
+

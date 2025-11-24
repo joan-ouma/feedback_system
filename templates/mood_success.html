@@ -1,0 +1,12 @@
+<div class="success-message">
+    <h3>✓ Mood Recorded Successfully!</h3>
+    <p>Your mood has been saved. Check your recommendations below.</p>
+    
+    {{if .recommendation}}
+    <div class="recommendations-box">
+        <h4>Personalized Recommendations:</h4>
+        <div class="recommendations-content">{{.recommendation.Recommendations}}</div>
+    </div>
+    {{end}}
+</div>
+

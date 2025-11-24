@@ -1,0 +1,74 @@
+<div class="token-display-container">
+    <div class="success-icon">✓</div>
+    <h2>Account Created Successfully!</h2>
+    <p class="subtitle">Your anonymous account has been created. Please save your token below - you'll need it to log in.</p>
+    
+    <div class="token-box">
+        <label for="user-token">Your Anonymous Token:</label>
+        <div class="token-input-group">
+            <input type="text" 
+                   id="user-token" 
+                   value="{{.Token}}" 
+                   readonly 
+                   class="token-input"
+                   onclick="this.select()">
+            <button type="button" 
+                    onclick="copyToken()" 
+                    class="btn-copy"
+                    id="copy-btn">
+                Copy
+            </button>
+        </div>
+        <small class="token-hint">Click the token to select it, or use the Copy button</small>
+    </div>
+    
+    <div class="token-warning">
+        <strong>⚠️ Important:</strong> Save this token securely! This is your only way to access your account. 
+        We don't store your email or phone number, so if you lose this token, you won't be able to recover your account.
+    </div>
+    
+    <div class="token-actions">
+        <button onclick="saveTokenToStorage()" class="btn-secondary">Save to Browser Storage</button>
+        <a href="/dashboard" class="btn-primary">Continue to Dashboard</a>
+    </div>
+</div>
+
+<script>
+    function copyToken() {
+        const tokenInput = document.getElementById('user-token');
+        tokenInput.select();
+        tokenInput.setSelectionRange(0, 99999); // For mobile devices
+        
+        navigator.clipboard.writeText(tokenInput.value).then(function() {
+            const btn = document.getElementById('copy-btn');
+            const originalText = btn.textContent;
+            btn.textContent = 'Copied!';
+            btn.style.background = '#28a745';
+            setTimeout(function() {
+                btn.textContent = originalText;
+                btn.style.background = '';
+            }, 2000);
+        }).catch(function(err) {
+            // Fallback for older browsers
+            document.execCommand('copy');
+            alert('Token copied to clipboard!');
+        });
+    }
+    
+    function saveTokenToStorage() {
+        const token = document.getElementById('user-token').value;
+        localStorage.setItem('anonymous_token', token);
+        alert('Token saved to browser storage! You can now use it to log in from this browser.');
+    }
+    
+    // Auto-select token on click
+    document.addEventListener('DOMContentLoaded', function() {
+        const tokenInput = document.getElementById('user-token');
+        if (tokenInput) {
+            tokenInput.addEventListener('click', function() {
+                this.select();
+            });
+        }
+    });
+</script>
+

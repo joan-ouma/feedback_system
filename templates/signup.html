@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Up - Campus Mental Health Support</title>
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <div class="auth-container">
+        <div class="auth-card">
+            <h1>Welcome to Campus Support</h1>
+            <p class="subtitle">Your anonymous mental health support platform</p>
+            
+            <div id="signup-form">
+                <form hx-post="/signup" 
+                      hx-target="#signup-form" 
+                      hx-swap="outerHTML"
+                      hx-headers='{"HX-Request": "true"}'>
+                    <div class="form-group">
+                        <label for="display_name">Display Name (Optional)</label>
+                        <input type="text" id="display_name" name="display_name" placeholder="Choose a display name">
+                        <small>This helps personalize your experience. You can remain completely anonymous.</small>
+                    </div>
+                    
+                    <button type="submit" class="btn-primary">Create Anonymous Account</button>
+                </form>
+                
+                <div class="auth-info">
+                    <h3>How it works:</h3>
+                    <ul>
+                        <li>No email or phone required</li>
+                        <li>You'll receive a unique token to access your account</li>
+                        <li>Save your token securely - it's your only way to log back in</li>
+                        <li>All data is completely anonymous</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="auth-footer">
+                <p>Already have a token? <a href="/login">Login here</a></p>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Token display will be shown via HTMX swap, no redirect needed
+    </script>
+</body>
+</html>
+

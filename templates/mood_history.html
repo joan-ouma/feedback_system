@@ -1,0 +1,21 @@
+{{if .history}}
+<div class="mood-history-container">
+    {{range .history}}
+    <div class="mood-entry-card">
+        <div class="mood-entry-header">
+            <span class="mood-date">{{.Date.Format "January 2, 2006"}}</span>
+            <span class="mood-type">{{.MoodType}}</span>
+            <span class="mood-score score-{{.MoodLevel}}">{{.Score}}/10</span>
+        </div>
+        {{if .Notes}}
+        <p class="mood-notes">{{.Notes}}</p>
+        {{end}}
+    </div>
+    {{end}}
+</div>
+{{else}}
+<div class="empty-state">
+    <p>No mood entries yet. Start tracking your mood today!</p>
+</div>
+{{end}}
+

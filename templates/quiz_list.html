@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mental Health Quizzes - Campus Support</title>
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <a href="/dashboard" class="logo">Campus Support</a>
+            <div class="nav-links">
+                <a href="/dashboard">Dashboard</a>
+                <a href="/mood">Mood Tracking</a>
+                <a href="/quizzes">Quizzes</a>
+                <a href="/consultation">Consultation</a>
+                <button hx-post="/logout" hx-target="body" class="btn-secondary">Logout</button>
+            </div>
+        </div>
+    </nav>
+    
+    <main class="container">
+        <div class="dashboard-header">
+            <h1>Mental Health Quizzes</h1>
+            <p>Take assessments to better understand your mental health and get personalized recommendations</p>
+        </div>
+
+        <div class="quiz-grid">
+            <div class="card quiz-card">
+                <h3>📊 Daily Mood Assessment</h3>
+                <p>Quick assessment to understand your current mood and emotional state</p>
+                <button onclick="loadQuiz('mood_assessment')" class="btn-primary">Start Quiz</button>
+            </div>
+
+            <div class="card quiz-card">
+                <h3>😰 Stress Level Check</h3>
+                <p>Evaluate your current stress levels and identify potential stressors</p>
+                <button onclick="loadQuiz('stress_level')" class="btn-primary">Start Quiz</button>
+            </div>
+
+            <div class="card quiz-card">
+                <h3>😟 Anxiety Check</h3>
+                <p>Assess your anxiety levels and get personalized recommendations</p>
+                <button onclick="loadQuiz('anxiety_check')" class="btn-primary">Start Quiz</button>
+            </div>
+
+            <div class="card quiz-card">
+                <h3>💚 Wellness Check</h3>
+                <p>Comprehensive wellness assessment covering multiple aspects</p>
+                <button onclick="loadQuiz('wellness')" class="btn-primary">Start Quiz</button>
+            </div>
+        </div>
+
+        <div id="quiz-container" class="card" style="display: none;">
+            <div id="quiz-content"></div>
+        </div>
+    </main>
+
+    <script>
+        function loadQuiz(type) {
+            const container = document.getElementById('quiz-container');
+            const content = document.getElementById('quiz-content');
+            
+            container.style.display = 'block';
+            content.innerHTML = '<div class="loading">Loading quiz...</div>';
+            
+            // Scroll to quiz container
+            container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            
+            // Make HTMX request with proper headers
+            fetch('/api/quiz/' + type, {
+                method: 'GET',
+                headers: {
+                    'HX-Request': 'true',
+                    'Content-Type': 'text/html'
+                },
+                credentials: 'include' // Include cookies for authentication
+            })
+            .then(response => {
+                if (response.status === 401 || response.status === 403) {
+                    content.innerHTML = '<div class="error">Please log in to take quizzes.</div>';
+                    return;
+                }
+                if (!response.ok) {
+                    throw new Error('Failed to load quiz');
+                }
+                return response.text();
+            })
+            .then(html => {
+                if (html) {
+                    content.innerHTML = html;
+                }
+            })
+            .catch(error => {
+                console.error('Error loading quiz:', error);
+                content.innerHTML = '<div class="error">Failed to load quiz. Please try again.</div>';
+            });
+        }
+    </script>
+</body>
+</html>
+

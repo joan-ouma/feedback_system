@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mood Tracking - Campus Mental Health Support</title>
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <a href="/dashboard" class="logo">Campus Support</a>
+            <div class="nav-links">
+                <a href="/dashboard">Dashboard</a>
+                <a href="/mood">Mood Tracking</a>
+                <a href="/quizzes">Quizzes</a>
+                <a href="/consultation">Consultation</a>
+                <button hx-post="/logout" hx-target="body" class="btn-secondary">Logout</button>
+            </div>
+        </div>
+    </nav>
+    
+    <main class="container">
+        <div class="dashboard-header">
+            <h1>Daily Mood Tracking</h1>
+            <p>Track your mood daily and get personalized recommendations</p>
+        </div>
+
+        <!-- Daily Quote -->
+        <div id="daily-quote-container" class="card quote-card">
+            <h2>💭 Today's Motivational Quote</h2>
+            <div id="daily-quote">
+                <div class="loading">Loading your daily quote...</div>
+            </div>
+        </div>
+
+        <!-- Mood Entry Form -->
+        <div class="card">
+            <h2>How are you feeling today?</h2>
+            <form hx-post="/api/mood" 
+                  hx-target="#mood-result" 
+                  hx-swap="innerHTML"
+                  hx-on::after-request="if(event.detail.xhr.status === 200) { htmx.ajax('GET', '/api/mood/history', {target: '#mood-history', swap: 'innerHTML'}); htmx.ajax('GET', '/api/mood/quote', {target: '#daily-quote', swap: 'innerHTML'}); }">
+                <div class="form-group">
+                    <label>Mood Type</label>
+                    <select name="mood_type" required>
+                        <option value="happy">😊 Happy</option>
+                        <option value="sad">😢 Sad</option>
+                        <option value="anxious">😰 Anxious</option>
+                        <option value="stressed">😤 Stressed</option>
+                        <option value="calm">😌 Calm</option>
+                        <option value="energetic">⚡ Energetic</option>
+                        <option value="tired">😴 Tired</option>
+                        <option value="frustrated">😠 Frustrated</option>
+                        <option value="neutral">😐 Neutral</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Mood Level (1-10)</label>
+                    <input type="range" name="score" min="1" max="10" value="5" 
+                           oninput="document.getElementById('score-display').textContent = this.value" required>
+                    <div class="score-display">
+                        <span id="score-display">5</span>/10
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Notes (Optional)</label>
+                    <textarea name="notes" rows="3" placeholder="How are you feeling? What's on your mind?"></textarea>
+                </div>
+
+                <button type="submit" class="btn-primary">Record Mood</button>
+            </form>
+            <div id="mood-result"></div>
+        </div>
+
+        <!-- Mood History -->
+        <div class="card">
+            <h2>Your Mood History</h2>
+            <div id="mood-history">
+                <div class="loading">Loading your mood history...</div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Load quote and history on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            htmx.ajax('GET', '/api/mood/quote', {
+                target: '#daily-quote',
+                swap: 'innerHTML'
+            });
+            htmx.ajax('GET', '/api/mood/history', {
+                target: '#mood-history',
+                swap: 'innerHTML'
+            });
+        });
+    </script>
+</body>
+</html>
+

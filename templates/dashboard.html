@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Campus Mental Health Support</title>
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <a href="/dashboard" class="logo">Campus Support</a>
+            <div class="nav-links">
+                <a href="/dashboard">Dashboard</a>
+                <a href="/consultation">Consultation</a>
+                <button hx-post="/logout" hx-target="body" class="btn-secondary">Logout</button>
+            </div>
+        </div>
+    </nav>
+    
+    <main class="container">
+        <div class="dashboard-header">
+            <h1>Your Dashboard</h1>
+            <p>Submit anonymous feedback or consult with our AI counselor</p>
+        </div>
+        
+        <div class="dashboard-grid">
+            <div class="card">
+                <h2>Submit Feedback</h2>
+                <form hx-post="/api/feedback" 
+                      hx-target="#feedback-result" 
+                      hx-swap="innerHTML"
+                      hx-on::after-request="if(event.detail.xhr.status === 200) { this.reset(); htmx.ajax('GET', '/api/feedback', {target: '#feedbacks-list', swap: 'innerHTML'}); }">
+                    <div class="form-group">
+                        <label for="feedback-type">Type</label>
+                        <select id="feedback-type" name="type" required>
+                            <option value="general">General</option>
+                            <option value="mental_health">Mental Health</option>
+                            <option value="campus">Campus Issue</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="feedback-title">Title</label>
+                        <input type="text" id="feedback-title" name="title" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="feedback-content">Content</label>
+                        <textarea id="feedback-content" name="content" rows="5" required></textarea>
+                    </div>
+                    
+                    <button type="submit" class="btn-primary">Submit Feedback</button>
+                </form>
+                <div id="feedback-result"></div>
+            </div>
+            
+            <div class="card">
+                <h2>My Feedbacks</h2>
+                <div id="feedbacks-list">
+                    <div class="loading">Loading your feedbacks...</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <h2>Quick Actions</h2>
+            <div class="action-buttons">
+                <a href="/mood" class="btn-primary">Track My Mood</a>
+                <a href="/quizzes" class="btn-primary">Take a Quiz</a>
+                <a href="/consultation" class="btn-primary">Start Consultation</a>
+                <button onclick="saveToken()" class="btn-secondary">Save My Token</button>
+            </div>
+        </div>
+    </main>
+    
+    <script>
+        // Load feedbacks on page load using HTMX
+        document.body.addEventListener('htmx:load', function() {
+            htmx.ajax('GET', '/api/feedback', {
+                target: '#feedbacks-list',
+                swap: 'innerHTML'
+            });
+        });
+        
+        // Trigger load on page ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', function() {
+                htmx.ajax('GET', '/api/feedback', {
+                    target: '#feedbacks-list',
+                    swap: 'innerHTML'
+                });
+            });
+        } else {
+            htmx.ajax('GET', '/api/feedback', {
+                target: '#feedbacks-list',
+                swap: 'innerHTML'
+            });
+        }
+        
+        function saveToken() {
+            alert('Your token is saved in your session. Make sure to save it securely if you want to access your account from another device.');
+        }
+    </script>
+</body>
+</html>
+
