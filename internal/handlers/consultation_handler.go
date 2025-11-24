@@ -45,27 +45,59 @@ func (h *ConsultationHandler) SendMessage(w http.ResponseWriter, r *http.Request
 	}
 
 	var req struct {
-		SessionID string `json:"session_id"`
-		Message   string `json:"message"`
+		SessionID string `json:"session_id" form:"session_id"`
+		Message   string `json:"message" form:"message"`
 	}
 
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Invalid request", http.StatusBadRequest)
+	// Support both JSON and form-encoded data (HTMX sends form data)
+	contentType := r.Header.Get("Content-Type")
+	if strings.Contains(contentType, "application/json") {
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			log.Printf("❌ JSON decode error: %v", err)
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(map[string]interface{}{
+				"error": "Invalid request: " + err.Error(),
+			})
+			return
+		}
+	} else {
+		// Parse form data (HTMX default)
+		if err := r.ParseForm(); err != nil {
+			log.Printf("❌ Form parse error: %v", err)
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(map[string]interface{}{
+				"error": "Invalid request: " + err.Error(),
+			})
+			return
+		}
+		req.SessionID = r.FormValue("session_id")
+		req.Message = r.FormValue("message")
+	}
+
+	if req.Message == "" {
+		log.Printf("❌ Empty message in request")
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"error": "Message cannot be empty",
+		})
 		return
 	}
 
-	var sessionID primitive.ObjectID
-	if req.SessionID != "" {
-		sessionID, err = primitive.ObjectIDFromHex(req.SessionID)
-		if err != nil {
-			http.Error(w, "Invalid session ID", http.StatusBadRequest)
-			return
-		}
-	}
-
-	// Get or create session
 	var sessionIDPtr *primitive.ObjectID
 	if req.SessionID != "" {
+		sessionID, err := primitive.ObjectIDFromHex(req.SessionID)
+		if err != nil {
+			log.Printf("❌ Invalid session ID: %s, error: %v", req.SessionID, err)
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(map[string]interface{}{
+				"error": "Invalid session ID: " + err.Error(),
+			})
+			return
+		}
 		sessionIDPtr = &sessionID
 	}
 	session, err := h.consultationService.GetOrCreateSession(r.Context(), user.ID, sessionIDPtr)

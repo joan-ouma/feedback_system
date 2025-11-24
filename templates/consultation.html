@@ -120,7 +120,7 @@
                 </div>
             </div>
             
-            <form id="chat-form" hx-post="/api/consultation/message" hx-target="#chat-messages" hx-swap="beforeend" hx-trigger="submit">
+            <form id="chat-form">
                 <input type="hidden" id="session-id" name="session_id" value="">
                 <div class="chat-input-container">
                     <input type="text" id="message-input" name="message" class="chat-input" placeholder="Type your message..." required>
@@ -179,9 +179,85 @@
             // Scroll to bottom
             const chatMessages = document.getElementById('chat-messages');
             chatMessages.scrollTop = chatMessages.scrollHeight;
+            
+            // Send message via fetch API
+            const formData = new FormData();
+            formData.append('message', message);
+            const sessionIdValue = document.getElementById('session-id').value;
+            if (sessionIdValue) {
+                formData.append('session_id', sessionIdValue);
+            }
+            
+            fetch('/api/consultation/message', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'HX-Request': 'true',
+                },
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(err => Promise.reject(err));
+                }
+                return response.json();
+            })
+            .then(data => {
+                // Hide loading indicator
+                document.getElementById('loading-indicator').classList.remove('show');
+                
+                // Re-enable input and button
+                messageInput.disabled = false;
+                sendBtn.disabled = false;
+                messageInput.focus();
+                
+                if (data.consultation) {
+                    // Add assistant response
+                    const assistantMessageDiv = document.createElement('div');
+                    assistantMessageDiv.className = 'message assistant';
+                    assistantMessageDiv.innerHTML = `<strong>Counselor:</strong> ${data.consultation.response}`;
+                    document.getElementById('chat-messages').appendChild(assistantMessageDiv);
+                    
+                    // Update session ID if needed
+                    if (data.session_id) {
+                        sessionId = data.session_id;
+                        document.getElementById('session-id').value = sessionId;
+                    }
+                } else if (data.error) {
+                    // Show error message
+                    const errorDiv = document.createElement('div');
+                    errorDiv.className = 'message assistant';
+                    errorDiv.style.color = '#d32f2f';
+                    errorDiv.innerHTML = `<strong>Counselor:</strong> ${data.consultation?.response || data.error || "I'm sorry, I'm having trouble responding right now. Please try again in a moment."}`;
+                    document.getElementById('chat-messages').appendChild(errorDiv);
+                }
+                
+                // Scroll to bottom
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            })
+            .catch(error => {
+                console.error('Error sending message:', error);
+                
+                // Hide loading indicator
+                document.getElementById('loading-indicator').classList.remove('show');
+                
+                // Re-enable input and button
+                messageInput.disabled = false;
+                sendBtn.disabled = false;
+                messageInput.focus();
+                
+                // Show error message
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'message assistant';
+                errorDiv.style.color = '#d32f2f';
+                errorDiv.innerHTML = `<strong>Counselor:</strong> ${error.error || error.message || "I'm sorry, I'm having trouble responding right now. Please try again in a moment."}`;
+                document.getElementById('chat-messages').appendChild(errorDiv);
+                
+                // Scroll to bottom
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            });
         });
         
-        // Handle HTMX response
+        // Handle HTMX response (kept for other HTMX requests, but not used for consultation)
         document.body.addEventListener('htmx:afterRequest', function(event) {
             const messageInput = document.getElementById('message-input');
             const sendBtn = document.querySelector('.send-btn');
