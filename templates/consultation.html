@@ -167,10 +167,14 @@
             // Show loading indicator
             document.getElementById('loading-indicator').classList.add('show');
             
+            // Store message before clearing input
+            const messageToSend = message;
+            const sessionIdValue = document.getElementById('session-id').value;
+            
             // Add user message to chat
             const userMessageDiv = document.createElement('div');
             userMessageDiv.className = 'message user';
-            userMessageDiv.innerHTML = `<strong>You:</strong> ${message}`;
+            userMessageDiv.innerHTML = `<strong>You:</strong> ${messageToSend}`;
             document.getElementById('chat-messages').appendChild(userMessageDiv);
             
             // Clear input
@@ -180,19 +184,21 @@
             const chatMessages = document.getElementById('chat-messages');
             chatMessages.scrollTop = chatMessages.scrollHeight;
             
-            // Send message via fetch API
-            const formData = new FormData();
-            formData.append('message', message);
-            const sessionIdValue = document.getElementById('session-id').value;
+            // Send message via fetch API using URLSearchParams for better compatibility
+            const formData = new URLSearchParams();
+            formData.append('message', messageToSend);
             if (sessionIdValue) {
                 formData.append('session_id', sessionIdValue);
             }
+            
+            console.log('Sending message:', messageToSend, 'Session ID:', sessionIdValue);
             
             fetch('/api/consultation/message', {
                 method: 'POST',
                 body: formData,
                 headers: {
                     'HX-Request': 'true',
+                    'Content-Type': 'application/x-www-form-urlencoded',
                 },
             })
             .then(response => {

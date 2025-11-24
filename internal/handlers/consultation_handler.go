@@ -50,16 +50,12 @@ func (h *ConsultationHandler) SendMessage(w http.ResponseWriter, r *http.Request
 	}
 
 	// Support both JSON and form-encoded data
-	// FormData from fetch API may not set Content-Type correctly, so try form first
 	contentType := r.Header.Get("Content-Type")
+	log.Printf("🔵 Request Content-Type: %s, Method: %s", contentType, r.Method)
 	
-	// Try parsing as form data first (most common case)
-	if err := r.ParseForm(); err == nil && (r.FormValue("message") != "" || contentType == "" || strings.Contains(contentType, "application/x-www-form-urlencoded") || strings.Contains(contentType, "multipart/form-data")) {
-		req.SessionID = r.FormValue("session_id")
-		req.Message = r.FormValue("message")
-		log.Printf("✅ Parsed as form data: session_id=%s, message=%s", req.SessionID, req.Message)
-	} else if strings.Contains(contentType, "application/json") {
-		// Try JSON parsing
+	// Check Content-Type to decide parsing method
+	if strings.Contains(contentType, "application/json") {
+		// Parse as JSON
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 			log.Printf("❌ JSON decode error: %v", err)
 			w.Header().Set("Content-Type", "application/json")
@@ -69,9 +65,9 @@ func (h *ConsultationHandler) SendMessage(w http.ResponseWriter, r *http.Request
 			})
 			return
 		}
-		log.Printf("✅ Parsed as JSON: session_id=%s, message=%s", req.SessionID, req.Message)
+		log.Printf("✅ Parsed as JSON: session_id=%s, message length=%d", req.SessionID, len(req.Message))
 	} else {
-		// Fallback: try to parse form again
+		// Parse as form data (default for form submissions)
 		if err := r.ParseForm(); err != nil {
 			log.Printf("❌ Form parse error: %v, Content-Type: %s", err, contentType)
 			w.Header().Set("Content-Type", "application/json")
@@ -83,7 +79,7 @@ func (h *ConsultationHandler) SendMessage(w http.ResponseWriter, r *http.Request
 		}
 		req.SessionID = r.FormValue("session_id")
 		req.Message = r.FormValue("message")
-		log.Printf("✅ Parsed as form data (fallback): session_id=%s, message=%s", req.SessionID, req.Message)
+		log.Printf("✅ Parsed as form data: session_id=%s, message length=%d, message value='%s'", req.SessionID, len(req.Message), req.Message)
 	}
 
 	if req.Message == "" {
