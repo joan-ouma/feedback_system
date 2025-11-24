@@ -111,10 +111,94 @@ func main() {
 	protectedRouter := router.PathPrefix("").Subrouter()
 	protectedRouter.Use(middleware.NewAuthMiddleware(cfg.Server.SessionSecret).RequireAuth)
 	feedbackHandler.RegisterRoutes(protectedRouter)
-	// Temporarily disabled - MongoDB migration in progress
-	// consultationHandler.RegisterRoutes(protectedRouter)
-	// moodHandler.RegisterRoutes(protectedRouter)
-	// quizHandler.RegisterRoutes(protectedRouter)
+	
+	// Placeholder routes for features being migrated to MongoDB
+	protectedRouter.HandleFunc("/mood", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html")
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`<!DOCTYPE html>
+<html>
+<head>
+	<title>Mood Tracking - Coming Soon</title>
+	<link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+	<nav class="navbar">
+		<div class="container">
+			<a href="/dashboard" class="logo">Campus Support</a>
+			<div class="nav-links">
+				<a href="/dashboard">Dashboard</a>
+			</div>
+		</div>
+	</nav>
+	<main class="container">
+		<div class="card">
+			<h1>Mood Tracking</h1>
+			<p>This feature is currently being migrated to MongoDB and will be available soon!</p>
+			<a href="/dashboard" class="btn-primary">Back to Dashboard</a>
+		</div>
+	</main>
+</body>
+</html>`))
+	}).Methods("GET")
+	
+	protectedRouter.HandleFunc("/quizzes", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html")
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`<!DOCTYPE html>
+<html>
+<head>
+	<title>Quizzes - Coming Soon</title>
+	<link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+	<nav class="navbar">
+		<div class="container">
+			<a href="/dashboard" class="logo">Campus Support</a>
+			<div class="nav-links">
+				<a href="/dashboard">Dashboard</a>
+			</div>
+		</div>
+	</nav>
+	<main class="container">
+		<div class="card">
+			<h1>Mental Health Quizzes</h1>
+			<p>This feature is currently being migrated to MongoDB and will be available soon!</p>
+			<a href="/dashboard" class="btn-primary">Back to Dashboard</a>
+		</div>
+	</main>
+</body>
+</html>`))
+	}).Methods("GET")
+	
+	protectedRouter.HandleFunc("/consultation", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html")
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`<!DOCTYPE html>
+<html>
+<head>
+	<title>AI Consultation - Coming Soon</title>
+	<link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+	<nav class="navbar">
+		<div class="container">
+			<a href="/dashboard" class="logo">Campus Support</a>
+			<div class="nav-links">
+				<a href="/dashboard">Dashboard</a>
+			</div>
+		</div>
+	</nav>
+	<main class="container">
+		<div class="card">
+			<h1>AI Consultation</h1>
+			<p>This feature is currently being migrated to MongoDB and will be available soon!</p>
+			<a href="/dashboard" class="btn-primary">Back to Dashboard</a>
+		</div>
+	</main>
+</body>
+</html>`))
+	}).Methods("GET")
 
 	// Root redirect
 	router.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
