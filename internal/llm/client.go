@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/joan/feedback-sys/internal/config"
@@ -97,7 +98,12 @@ func (c *Client) Chat(ctx context.Context, conversationHistory []Message, userMe
 		))
 	defer span.End()
 
-	// Build messages with system prompt
+	// Check if using Gemini API
+	if strings.Contains(c.apiURL, "generativelanguage.googleapis.com") {
+		return c.chatGemini(ctx, conversationHistory, userMessage)
+	}
+
+	// Build messages with system prompt (OpenAI format)
 	messages := []Message{
 		{
 			Role:    "system",
@@ -127,14 +133,27 @@ func (c *Client) Chat(ctx context.Context, conversationHistory []Message, userMe
 		return "", fmt.Errorf("failed to marshal request: %w", err)
 	}
 
-	req, err := http.NewRequestWithContext(ctx, "POST", fmt.Sprintf("%s/chat/completions", c.apiURL), bytes.NewBuffer(jsonData))
+	// Determine API endpoint based on URL
+	endpoint := fmt.Sprintf("%s/chat/completions", c.apiURL)
+	if c.apiURL == "https://generativelanguage.googleapis.com/v1beta" || 
+	   c.apiURL == "https://generativelanguage.googleapis.com/v1" {
+		// Gemini API uses different endpoint
+		endpoint = fmt.Sprintf("%s/models/%s:generateContent?key=%s", c.apiURL, c.model, c.apiKey)
+	}
+
+	req, err := http.NewRequestWithContext(ctx, "POST", endpoint, bytes.NewBuffer(jsonData))
 	if err != nil {
 		span.RecordError(err)
 		return "", fmt.Errorf("failed to create request: %w", err)
 	}
 
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", c.apiKey))
+	
+	// Gemini uses API key in URL, OpenAI uses Bearer token
+	if c.apiURL != "https://generativelanguage.googleapis.com/v1beta" && 
+	   c.apiURL != "https://generativelanguage.googleapis.com/v1" {
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", c.apiKey))
+	}
 
 	resp, err := c.client.Do(req)
 	if err != nil {
@@ -171,6 +190,147 @@ func (c *Client) Chat(ctx context.Context, conversationHistory []Message, userMe
 	}
 
 	response := chatResp.Choices[0].Message.Content
+	span.SetAttributes(attribute.Int("response.length", len(response)))
+
+	return response, nil
+}
+
+// chatGemini handles Gemini API requests (different format)
+func (c *Client) chatGemini(ctx context.Context, conversationHistory []Message, userMessage string) (string, error) {
+	ctx, span := llmTracer.Start(ctx, "LLM.ChatGemini")
+	defer span.End()
+
+	// Gemini uses a different request format
+	type GeminiContent struct {
+		Parts []struct {
+			Text string `json:"text"`
+		} `json:"parts"`
+		Role string `json:"role,omitempty"`
+	}
+
+	type GeminiRequest struct {
+		Contents []GeminiContent `json:"contents"`
+		SystemInstruction *struct {
+			Parts []struct {
+				Text string `json:"text"`
+			} `json:"parts"`
+		} `json:"systemInstruction,omitempty"`
+		GenerationConfig struct {
+			Temperature float64 `json:"temperature,omitempty"`
+			MaxOutputTokens int `json:"maxOutputTokens,omitempty"`
+		} `json:"generationConfig,omitempty"`
+	}
+
+	// Build contents array
+	contents := []GeminiContent{}
+	
+	// Add conversation history
+	for _, msg := range conversationHistory {
+		contents = append(contents, GeminiContent{
+			Parts: []struct {
+				Text string `json:"text"`
+			}{{Text: msg.Content}},
+			Role: msg.Role,
+		})
+	}
+	
+	// Add current user message
+	contents = append(contents, GeminiContent{
+		Parts: []struct {
+			Text string `json:"text"`
+		}{{Text: userMessage}},
+		Role: "user",
+	})
+
+	geminiReq := GeminiRequest{
+		Contents: contents,
+		SystemInstruction: &struct {
+			Parts []struct {
+				Text string `json:"text"`
+			} `json:"parts"`
+		}{
+			Parts: []struct {
+				Text string `json:"text"`
+			}{{Text: c.systemPrompt}},
+		},
+		GenerationConfig: struct {
+			Temperature float64 `json:"temperature,omitempty"`
+			MaxOutputTokens int `json:"maxOutputTokens,omitempty"`
+		}{
+			Temperature: 0.7,
+			MaxOutputTokens: 1000,
+		},
+	}
+
+	jsonData, err := json.Marshal(geminiReq)
+	if err != nil {
+		span.RecordError(err)
+		return "", fmt.Errorf("failed to marshal Gemini request: %w", err)
+	}
+
+	// Gemini model name (default to gemini-pro if not specified)
+	modelName := c.model
+	if modelName == "" || !strings.HasPrefix(modelName, "gemini") {
+		modelName = "gemini-pro"
+	}
+	endpoint := fmt.Sprintf("%s/models/%s:generateContent?key=%s", c.apiURL, modelName, c.apiKey)
+	req, err := http.NewRequestWithContext(ctx, "POST", endpoint, bytes.NewBuffer(jsonData))
+	if err != nil {
+		span.RecordError(err)
+		return "", fmt.Errorf("failed to create Gemini request: %w", err)
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := c.client.Do(req)
+	if err != nil {
+		span.RecordError(err)
+		return "", fmt.Errorf("failed to send Gemini request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		span.RecordError(err)
+		return "", fmt.Errorf("failed to read Gemini response: %w", err)
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		span.SetAttributes(attribute.Int("http.status_code", resp.StatusCode))
+		span.RecordError(fmt.Errorf("Gemini API error: %s", string(body)))
+		return "", fmt.Errorf("Gemini API returned status %d: %s", resp.StatusCode, string(body))
+	}
+
+	// Parse Gemini response
+	type GeminiResponse struct {
+		Candidates []struct {
+			Content struct {
+				Parts []struct {
+					Text string `json:"text"`
+				} `json:"parts"`
+			} `json:"content"`
+		} `json:"candidates"`
+		Error *struct {
+			Message string `json:"message"`
+		} `json:"error,omitempty"`
+	}
+
+	var geminiResp GeminiResponse
+	if err := json.Unmarshal(body, &geminiResp); err != nil {
+		span.RecordError(err)
+		return "", fmt.Errorf("failed to unmarshal Gemini response: %w", err)
+	}
+
+	if geminiResp.Error != nil {
+		span.RecordError(fmt.Errorf("Gemini API error: %s", geminiResp.Error.Message))
+		return "", fmt.Errorf("Gemini API error: %s", geminiResp.Error.Message)
+	}
+
+	if len(geminiResp.Candidates) == 0 || len(geminiResp.Candidates[0].Content.Parts) == 0 {
+		return "", fmt.Errorf("no response from Gemini")
+	}
+
+	response := geminiResp.Candidates[0].Content.Parts[0].Text
 	span.SetAttributes(attribute.Int("response.length", len(response)))
 
 	return response, nil

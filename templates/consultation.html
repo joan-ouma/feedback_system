@@ -65,6 +65,32 @@
             background: #ccc;
             cursor: not-allowed;
         }
+        .loading {
+            display: none;
+            padding: 12px 16px;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            max-width: 80%;
+        }
+        .loading.show {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .spinner {
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #007bff;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body>
@@ -87,6 +113,10 @@
             <div id="chat-messages" class="chat-messages">
                 <div class="message assistant">
                     <strong>Counselor:</strong> Hello! I'm here to support you. How are you feeling today? You can share anything that's on your mind, and I'll do my best to help.
+                </div>
+                <div id="loading-indicator" class="loading">
+                    <div class="spinner"></div>
+                    <span>Counselor is typing...</span>
                 </div>
             </div>
             
@@ -125,9 +155,17 @@
         document.getElementById('chat-form').addEventListener('submit', function(e) {
             e.preventDefault();
             const messageInput = document.getElementById('message-input');
+            const sendBtn = document.querySelector('.send-btn');
             const message = messageInput.value.trim();
             
             if (!message) return;
+            
+            // Disable input and button
+            messageInput.disabled = true;
+            sendBtn.disabled = true;
+            
+            // Show loading indicator
+            document.getElementById('loading-indicator').classList.add('show');
             
             // Add user message to chat
             const userMessageDiv = document.createElement('div');
@@ -145,25 +183,53 @@
         
         // Handle HTMX response
         document.body.addEventListener('htmx:afterRequest', function(event) {
-            if (event.detail.pathInfo.requestPath === '/api/consultation/message' && event.detail.xhr.status === 200) {
-                const response = JSON.parse(event.detail.xhr.responseText);
-                const consultation = response.consultation;
-                
-                // Add assistant response
-                const assistantMessageDiv = document.createElement('div');
-                assistantMessageDiv.className = 'message assistant';
-                assistantMessageDiv.innerHTML = `<strong>Counselor:</strong> ${consultation.response}`;
-                document.getElementById('chat-messages').appendChild(assistantMessageDiv);
-                
-                // Update session ID if needed
-                if (response.session_id) {
-                    sessionId = response.session_id;
-                    document.getElementById('session-id').value = sessionId;
+            const messageInput = document.getElementById('message-input');
+            const sendBtn = document.querySelector('.send-btn');
+            const loadingIndicator = document.getElementById('loading-indicator');
+            
+            // Hide loading indicator
+            loadingIndicator.classList.remove('show');
+            
+            // Re-enable input and button
+            messageInput.disabled = false;
+            sendBtn.disabled = false;
+            messageInput.focus();
+            
+            if (event.detail.pathInfo.requestPath === '/api/consultation/message') {
+                if (event.detail.xhr.status === 200) {
+                    const response = JSON.parse(event.detail.xhr.responseText);
+                    const consultation = response.consultation;
+                    
+                    // Add assistant response
+                    const assistantMessageDiv = document.createElement('div');
+                    assistantMessageDiv.className = 'message assistant';
+                    assistantMessageDiv.innerHTML = `<strong>Counselor:</strong> ${consultation.response}`;
+                    document.getElementById('chat-messages').appendChild(assistantMessageDiv);
+                    
+                    // Update session ID if needed
+                    if (response.session_id) {
+                        sessionId = response.session_id;
+                        document.getElementById('session-id').value = sessionId;
+                    }
+                } else {
+                    // Show error message
+                    const errorDiv = document.createElement('div');
+                    errorDiv.className = 'message assistant';
+                    errorDiv.style.color = '#d32f2f';
+                    errorDiv.innerHTML = `<strong>Counselor:</strong> I'm sorry, I'm having trouble responding right now. Please try again in a moment.`;
+                    document.getElementById('chat-messages').appendChild(errorDiv);
                 }
                 
                 // Scroll to bottom
                 const chatMessages = document.getElementById('chat-messages');
                 chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+        });
+        
+        // Show loading on request start
+        document.body.addEventListener('htmx:beforeRequest', function(event) {
+            if (event.detail.pathInfo.requestPath === '/api/consultation/message') {
+                document.getElementById('loading-indicator').classList.add('show');
             }
         });
         

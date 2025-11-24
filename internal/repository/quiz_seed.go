@@ -30,7 +30,7 @@ func SeedQuizzes(ctx context.Context, db *database.DB) error {
 				ID:          primitive.NewObjectID(),
 				Type:        models.QuizTypeMoodAssessment,
 				Title:       "Daily Mood Assessment",
-				Description: "Quick assessment to understand your current mood and emotional state",
+				Description: "Comprehensive assessment to understand your current mood and emotional state",
 			},
 			questions: []models.QuizQuestion{
 				{
@@ -38,6 +38,48 @@ func SeedQuizzes(ctx context.Context, db *database.DB) error {
 					Question:     "How would you rate your overall mood today?",
 					QuestionType: "scale",
 					Order:        1,
+				},
+				{
+					ID:           primitive.NewObjectID(),
+					Question:     "How energetic do you feel?",
+					QuestionType: "scale",
+					Order:        2,
+				},
+				{
+					ID:           primitive.NewObjectID(),
+					Question:     "How well did you sleep last night?",
+					QuestionType: "scale",
+					Order:        3,
+				},
+				{
+					ID:           primitive.NewObjectID(),
+					Question:     "How would you rate your ability to concentrate today?",
+					QuestionType: "scale",
+					Order:        4,
+				},
+				{
+					ID:           primitive.NewObjectID(),
+					Question:     "How connected do you feel to others today?",
+					QuestionType: "scale",
+					Order:        5,
+				},
+				{
+					ID:           primitive.NewObjectID(),
+					Question:     "How would you describe your stress level?",
+					QuestionType: "scale",
+					Order:        6,
+				},
+				{
+					ID:           primitive.NewObjectID(),
+					Question:     "How optimistic do you feel about today?",
+					QuestionType: "scale",
+					Order:        7,
+				},
+				{
+					ID:           primitive.NewObjectID(),
+					Question:     "How would you rate your overall emotional well-being?",
+					QuestionType: "scale",
+					Order:        8,
 				},
 			},
 		},
