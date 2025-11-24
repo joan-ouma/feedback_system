@@ -47,35 +47,37 @@ func main() {
 
 	// Initialize database
 	ctx := context.Background()
-	db, err := database.NewDB(ctx, cfg.Database.URL)
+	db, err := database.NewDB(ctx, cfg.Database.URI)
 	if err != nil {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}
 	defer db.Close()
-	log.Println("Database connection established")
+	log.Println("MongoDB connection established")
 
 	// Initialize repositories
 	userRepo := repository.NewUserRepository(db)
 	feedbackRepo := repository.NewFeedbackRepository(db)
-	consultationRepo := repository.NewConsultationRepository(db)
-	moodRepo := repository.NewMoodRepository(db)
-	quizRepo := repository.NewQuizRepository(db)
-	quoteRepo := repository.NewQuoteRepository(db)
+	// Temporarily disabled - MongoDB migration in progress
+	// consultationRepo := repository.NewConsultationRepository(db)
+	// moodRepo := repository.NewMoodRepository(db)
+	// quizRepo := repository.NewQuizRepository(db)
+	// quoteRepo := repository.NewQuoteRepository(db)
 
-	// Initialize LLM client
-	llmClient := llm.NewClient(cfg.LLM)
+	// Initialize LLM client (temporarily unused - MongoDB migration in progress)
+	_ = llm.NewClient(cfg.LLM)
 
 	// Initialize services
 	authService := service.NewAuthService(userRepo)
 	feedbackService := service.NewFeedbackService(feedbackRepo)
-	consultationService := service.NewConsultationService(consultationRepo, llmClient)
-	moodService := service.NewMoodService(moodRepo, quoteRepo, llmClient)
-	quizService := service.NewQuizService(quizRepo, llmClient)
+	// Temporarily disabled - MongoDB migration in progress
+	// consultationService := service.NewConsultationService(consultationRepo, llmClient)
+	// moodService := service.NewMoodService(moodRepo, quoteRepo, llmClient)
+	// quizService := service.NewQuizService(quizRepo, llmClient)
 
-	// Load templates
+	// Load templates (temporarily unused - MongoDB migration in progress)
 	tmpl := template.New("")
 	templatePattern := "templates/*.html"
-	templates, err := tmpl.ParseGlob(templatePattern)
+	_, err = tmpl.ParseGlob(templatePattern)
 	if err != nil {
 		log.Fatalf("Failed to load templates: %v", err)
 	}
@@ -89,9 +91,10 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to initialize feedback handler: %v", err)
 	}
-	consultationHandler := handlers.NewConsultationHandler(consultationService, authService)
-	moodHandler := handlers.NewMoodHandler(moodService, authService, templates)
-	quizHandler := handlers.NewQuizHandler(quizService, authService, templates)
+	// Temporarily disabled - MongoDB migration in progress
+	// consultationHandler := handlers.NewConsultationHandler(consultationService, authService)
+	// moodHandler := handlers.NewMoodHandler(moodService, authService, templates)
+	// quizHandler := handlers.NewQuizHandler(quizService, authService, templates)
 
 	// Setup router
 	router := mux.NewRouter()
@@ -106,9 +109,10 @@ func main() {
 	protectedRouter := router.PathPrefix("").Subrouter()
 	protectedRouter.Use(middleware.NewAuthMiddleware(cfg.Server.SessionSecret).RequireAuth)
 	feedbackHandler.RegisterRoutes(protectedRouter)
-	consultationHandler.RegisterRoutes(protectedRouter)
-	moodHandler.RegisterRoutes(protectedRouter)
-	quizHandler.RegisterRoutes(protectedRouter)
+	// Temporarily disabled - MongoDB migration in progress
+	// consultationHandler.RegisterRoutes(protectedRouter)
+	// moodHandler.RegisterRoutes(protectedRouter)
+	// quizHandler.RegisterRoutes(protectedRouter)
 
 	// Root redirect
 	router.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {

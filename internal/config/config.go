@@ -15,7 +15,7 @@ type Config struct {
 }
 
 type DatabaseConfig struct {
-	URL string
+	URI string // MongoDB connection URI
 }
 
 type ServerConfig struct {
@@ -41,7 +41,7 @@ func Load() (*Config, error) {
 
 	cfg := &Config{
 		Database: DatabaseConfig{
-			URL: getEnv("DATABASE_URL", "postgres://user:password@localhost:5432/feedback_sys?sslmode=disable"),
+			URI: getEnv("MONGODB_URI", getEnv("DATABASE_URL", "mongodb://localhost:27017/feedback_sys")), // Support both for migration
 		},
 		Server: ServerConfig{
 			Port:          getEnv("PORT", "8080"),

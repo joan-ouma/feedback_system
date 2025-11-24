@@ -6,9 +6,9 @@ import (
 	"encoding/base64"
 	"fmt"
 
-	"github.com/google/uuid"
 	"github.com/joan/feedback-sys/internal/models"
 	"github.com/joan/feedback-sys/internal/repository"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 )
@@ -86,7 +86,7 @@ func (s *AuthService) Authenticate(ctx context.Context, token string) (*models.U
 }
 
 // GetUser retrieves a user by ID
-func (s *AuthService) GetUser(ctx context.Context, userID uuid.UUID) (*models.User, error) {
+func (s *AuthService) GetUser(ctx context.Context, userID primitive.ObjectID) (*models.User, error) {
 	ctx, span := authTracer.Start(ctx, "AuthService.GetUser")
 	defer span.End()
 

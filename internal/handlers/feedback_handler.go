@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"path/filepath"
 
-	"github.com/google/uuid"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"github.com/gorilla/mux"
 	"github.com/joan/feedback-sys/internal/middleware"
 	"github.com/joan/feedback-sys/internal/models"
@@ -176,7 +176,7 @@ func (h *FeedbackHandler) renderFeedbacksHTML(w http.ResponseWriter, feedbacks [
 // GetFeedback retrieves a specific feedback
 func (h *FeedbackHandler) GetFeedback(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	feedbackID, err := uuid.Parse(vars["id"])
+	feedbackID, err := primitive.ObjectIDFromHex(vars["id"])
 	if err != nil {
 		http.Error(w, "Invalid feedback ID", http.StatusBadRequest)
 		return

@@ -4,10 +4,11 @@ import (
 	"context"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/joan/feedback-sys/internal/database"
 	"github.com/joan/feedback-sys/internal/models"
-	"github.com/jackc/pgx/v5"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 )
@@ -15,11 +16,15 @@ import (
 var userTracer = otel.Tracer("repository.user")
 
 type UserRepository struct {
-	db *database.DB
+	db         *database.DB
+	collection *mongo.Collection
 }
 
 func NewUserRepository(db *database.DB) *UserRepository {
-	return &UserRepository{db: db}
+	return &UserRepository{
+		db:         db,
+		collection: db.Collection("users"),
+	}
 }
 
 // Create creates a new anonymous user with a cryptographic token
@@ -31,26 +36,16 @@ func (r *UserRepository) Create(ctx context.Context, token, displayName string) 
 		attribute.String("user.display_name", displayName),
 	)
 
+	now := time.Now()
 	user := &models.User{
-		ID:          uuid.New(),
-		Token:       token,
-		DisplayName: displayName,
-		CreatedAt:   time.Now(),
-		LastActiveAt: time.Now(),
+		ID:           primitive.NewObjectID(),
+		Token:        token,
+		DisplayName:  displayName,
+		CreatedAt:    now,
+		LastActiveAt: now,
 	}
 
-	query := `
-		INSERT INTO users (id, token, display_name, created_at, last_active_at)
-		VALUES ($1, $2, $3, $4, $5)
-		RETURNING id, token, display_name, created_at, last_active_at
-	`
-
-	err := r.db.QueryRow(ctx, query,
-		user.ID, user.Token, user.DisplayName, user.CreatedAt, user.LastActiveAt,
-	).Scan(
-		&user.ID, &user.Token, &user.DisplayName, &user.CreatedAt, &user.LastActiveAt,
-	)
-
+	_, err := r.collection.InsertOne(ctx, user)
 	if err != nil {
 		span.RecordError(err)
 		return nil, err
@@ -67,17 +62,9 @@ func (r *UserRepository) GetByToken(ctx context.Context, token string) (*models.
 	span.SetAttributes(attribute.String("user.token", token))
 
 	user := &models.User{}
-	query := `
-		SELECT id, token, display_name, created_at, last_active_at
-		FROM users
-		WHERE token = $1
-	`
+	err := r.collection.FindOne(ctx, bson.M{"token": token}).Decode(user)
 
-	err := r.db.QueryRow(ctx, query, token).Scan(
-		&user.ID, &user.Token, &user.DisplayName, &user.CreatedAt, &user.LastActiveAt,
-	)
-
-	if err == pgx.ErrNoRows {
+	if err == mongo.ErrNoDocuments {
 		return nil, nil
 	}
 	if err != nil {
@@ -89,19 +76,17 @@ func (r *UserRepository) GetByToken(ctx context.Context, token string) (*models.
 }
 
 // UpdateLastActive updates the user's last active timestamp
-func (r *UserRepository) UpdateLastActive(ctx context.Context, userID uuid.UUID) error {
+func (r *UserRepository) UpdateLastActive(ctx context.Context, userID primitive.ObjectID) error {
 	ctx, span := userTracer.Start(ctx, "UserRepository.UpdateLastActive")
 	defer span.End()
 
-	span.SetAttributes(attribute.String("user.id", userID.String()))
+	span.SetAttributes(attribute.String("user.id", userID.Hex()))
 
-	query := `
-		UPDATE users
-		SET last_active_at = $1
-		WHERE id = $2
-	`
-
-	_, err := r.db.Exec(ctx, query, time.Now(), userID)
+	_, err := r.collection.UpdateOne(
+		ctx,
+		bson.M{"_id": userID},
+		bson.M{"$set": bson.M{"last_active_at": time.Now()}},
+	)
 	if err != nil {
 		span.RecordError(err)
 		return err

@@ -93,7 +93,10 @@ func (h *AuthHandler) SignUp(w http.ResponseWriter, r *http.Request) {
 	user, token, err := h.authService.SignUp(r.Context(), req.DisplayName)
 	if err != nil {
 		log.Printf("SignUp error: %v", err)
-		http.Error(w, "Failed to create account: "+err.Error(), http.StatusInternalServerError)
+		// Return detailed error for debugging (remove in production if needed)
+		w.Header().Set("Content-Type", "text/plain")
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte("Failed to create account: " + err.Error()))
 		return
 	}
 
@@ -105,7 +108,7 @@ func (h *AuthHandler) SignUp(w http.ResponseWriter, r *http.Request) {
 		session, _ = h.store.New(r, "feedback-session")
 	}
 	session.Values["token"] = token
-	session.Values["user_id"] = user.ID.String()
+	session.Values["user_id"] = user.GetIDString()
 	
 	// Set cookie options for production (HTTPS detection)
 	if r.TLS != nil || r.Header.Get("X-Forwarded-Proto") == "https" || r.Header.Get("X-Forwarded-Ssl") == "on" {
@@ -192,7 +195,7 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		session, _ = h.store.New(r, "feedback-session")
 	}
 	session.Values["token"] = req.Token
-	session.Values["user_id"] = user.ID.String()
+	session.Values["user_id"] = user.GetIDString()
 	
 	// Set cookie options for production (HTTPS detection)
 	if r.TLS != nil || r.Header.Get("X-Forwarded-Proto") == "https" || r.Header.Get("X-Forwarded-Ssl") == "on" {

@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/google/uuid"
 	"github.com/joan/feedback-sys/internal/models"
 	"github.com/joan/feedback-sys/internal/repository"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.opentelemetry.io/otel"
 )
 
@@ -21,7 +21,7 @@ func NewFeedbackService(feedbackRepo *repository.FeedbackRepository) *FeedbackSe
 }
 
 // SubmitFeedback creates a new feedback entry
-func (s *FeedbackService) SubmitFeedback(ctx context.Context, userID uuid.UUID, feedbackType models.FeedbackType, title, content string) (*models.Feedback, error) {
+func (s *FeedbackService) SubmitFeedback(ctx context.Context, userID primitive.ObjectID, feedbackType models.FeedbackType, title, content string) (*models.Feedback, error) {
 	ctx, span := feedbackServiceTracer.Start(ctx, "FeedbackService.SubmitFeedback")
 	defer span.End()
 
@@ -47,7 +47,7 @@ func (s *FeedbackService) SubmitFeedback(ctx context.Context, userID uuid.UUID, 
 }
 
 // GetUserFeedbacks retrieves all feedbacks for a user
-func (s *FeedbackService) GetUserFeedbacks(ctx context.Context, userID uuid.UUID) ([]*models.Feedback, error) {
+func (s *FeedbackService) GetUserFeedbacks(ctx context.Context, userID primitive.ObjectID) ([]*models.Feedback, error) {
 	ctx, span := feedbackServiceTracer.Start(ctx, "FeedbackService.GetUserFeedbacks")
 	defer span.End()
 
@@ -61,7 +61,7 @@ func (s *FeedbackService) GetUserFeedbacks(ctx context.Context, userID uuid.UUID
 }
 
 // GetFeedback retrieves a feedback by ID
-func (s *FeedbackService) GetFeedback(ctx context.Context, feedbackID uuid.UUID) (*models.Feedback, error) {
+func (s *FeedbackService) GetFeedback(ctx context.Context, feedbackID primitive.ObjectID) (*models.Feedback, error) {
 	ctx, span := feedbackServiceTracer.Start(ctx, "FeedbackService.GetFeedback")
 	defer span.End()
 

@@ -8,8 +8,10 @@ services:
     envVars:
       - key: PORT
         value: 8080
+      - key: MONGODB_URI
+        sync: false  # Set MongoDB Atlas connection string in Render dashboard
       - key: DATABASE_URL
-        sync: false  # Set this in Render dashboard
+        sync: false  # Legacy - will use MONGODB_URI if set
       - key: SESSION_SECRET
         generateValue: true
       - key: LLM_API_KEY

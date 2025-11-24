@@ -4,10 +4,12 @@ import (
 	"context"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/joan/feedback-sys/internal/database"
 	"github.com/joan/feedback-sys/internal/models"
-	"github.com/jackc/pgx/v5"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 )
@@ -15,11 +17,15 @@ import (
 var feedbackTracer = otel.Tracer("repository.feedback")
 
 type FeedbackRepository struct {
-	db *database.DB
+	db         *database.DB
+	collection *mongo.Collection
 }
 
 func NewFeedbackRepository(db *database.DB) *FeedbackRepository {
-	return &FeedbackRepository{db: db}
+	return &FeedbackRepository{
+		db:         db,
+		collection: db.Collection("feedbacks"),
+	}
 }
 
 // Create creates a new feedback entry
@@ -32,20 +38,11 @@ func (r *FeedbackRepository) Create(ctx context.Context, feedback *models.Feedba
 		attribute.String("feedback.status", feedback.Status),
 	)
 
-	feedback.ID = uuid.New()
+	feedback.ID = primitive.NewObjectID()
 	feedback.CreatedAt = time.Now()
 	feedback.UpdatedAt = time.Now()
 
-	query := `
-		INSERT INTO feedbacks (id, user_id, type, title, content, status, created_at, updated_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-	`
-
-	_, err := r.db.Exec(ctx, query,
-		feedback.ID, feedback.UserID, feedback.Type, feedback.Title,
-		feedback.Content, feedback.Status, feedback.CreatedAt, feedback.UpdatedAt,
-	)
-
+	_, err := r.collection.InsertOne(ctx, feedback)
 	if err != nil {
 		span.RecordError(err)
 		return err
@@ -55,61 +52,38 @@ func (r *FeedbackRepository) Create(ctx context.Context, feedback *models.Feedba
 }
 
 // GetByUserID retrieves all feedbacks for a user
-func (r *FeedbackRepository) GetByUserID(ctx context.Context, userID uuid.UUID) ([]*models.Feedback, error) {
+func (r *FeedbackRepository) GetByUserID(ctx context.Context, userID primitive.ObjectID) ([]*models.Feedback, error) {
 	ctx, span := feedbackTracer.Start(ctx, "FeedbackRepository.GetByUserID")
 	defer span.End()
 
-	span.SetAttributes(attribute.String("user.id", userID.String()))
+	span.SetAttributes(attribute.String("user.id", userID.Hex()))
 
-	query := `
-		SELECT id, user_id, type, title, content, status, created_at, updated_at
-		FROM feedbacks
-		WHERE user_id = $1
-		ORDER BY created_at DESC
-	`
-
-	rows, err := r.db.Query(ctx, query, userID)
+	opts := options.Find().SetSort(bson.D{{Key: "created_at", Value: -1}})
+	cursor, err := r.collection.Find(ctx, bson.M{"user_id": userID}, opts)
 	if err != nil {
 		span.RecordError(err)
 		return nil, err
 	}
-	defer rows.Close()
+	defer cursor.Close(ctx)
 
 	var feedbacks []*models.Feedback
-	for rows.Next() {
-		feedback := &models.Feedback{}
-		err := rows.Scan(
-			&feedback.ID, &feedback.UserID, &feedback.Type, &feedback.Title,
-			&feedback.Content, &feedback.Status, &feedback.CreatedAt, &feedback.UpdatedAt,
-		)
-		if err != nil {
-			span.RecordError(err)
-			return nil, err
-		}
-		feedbacks = append(feedbacks, feedback)
+	if err := cursor.All(ctx, &feedbacks); err != nil {
+		span.RecordError(err)
+		return nil, err
 	}
 
-	return feedbacks, rows.Err()
+	return feedbacks, nil
 }
 
 // GetByID retrieves a feedback by ID
-func (r *FeedbackRepository) GetByID(ctx context.Context, id uuid.UUID) (*models.Feedback, error) {
+func (r *FeedbackRepository) GetByID(ctx context.Context, id primitive.ObjectID) (*models.Feedback, error) {
 	ctx, span := feedbackTracer.Start(ctx, "FeedbackRepository.GetByID")
 	defer span.End()
 
 	feedback := &models.Feedback{}
-	query := `
-		SELECT id, user_id, type, title, content, status, created_at, updated_at
-		FROM feedbacks
-		WHERE id = $1
-	`
+	err := r.collection.FindOne(ctx, bson.M{"_id": id}).Decode(feedback)
 
-	err := r.db.QueryRow(ctx, query, id).Scan(
-		&feedback.ID, &feedback.UserID, &feedback.Type, &feedback.Title,
-		&feedback.Content, &feedback.Status, &feedback.CreatedAt, &feedback.UpdatedAt,
-	)
-
-	if err == pgx.ErrNoRows {
+	if err == mongo.ErrNoDocuments {
 		return nil, nil
 	}
 	if err != nil {
@@ -119,4 +93,3 @@ func (r *FeedbackRepository) GetByID(ctx context.Context, id uuid.UUID) (*models
 
 	return feedback, nil
 }
-
