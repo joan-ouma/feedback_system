@@ -2,7 +2,9 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
 	"html/template"
+	"log"
 	"net/http"
 	"path/filepath"
 
@@ -26,10 +28,13 @@ func NewAuthHandler(authService *service.AuthService, sessionSecret string, temp
 	
 	// Load template files
 	pattern := filepath.Join(templateDir, "*.html")
+	log.Printf("Loading templates from pattern: %s", pattern)
 	templates, err := tmpl.ParseGlob(pattern)
 	if err != nil {
-		return nil, err
+		log.Printf("Failed to parse templates: %v", err)
+		return nil, fmt.Errorf("failed to load templates: %w", err)
 	}
+	log.Printf("Successfully loaded templates")
 
 	store := sessions.NewCookieStore([]byte(sessionSecret))
 	
@@ -84,13 +89,15 @@ func (h *AuthHandler) SignUp(w http.ResponseWriter, r *http.Request) {
 
 	user, token, err := h.authService.SignUp(r.Context(), req.DisplayName)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		log.Printf("SignUp error: %v", err)
+		http.Error(w, "Failed to create account: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	// Store token in session
 	session, err := h.store.Get(r, "feedback-session")
 	if err != nil {
+		log.Printf("Session get error: %v", err)
 		// If session can't be retrieved, create a new one
 		session, _ = h.store.New(r, "feedback-session")
 	}
@@ -104,6 +111,7 @@ func (h *AuthHandler) SignUp(w http.ResponseWriter, r *http.Request) {
 	}
 	
 	if err := session.Save(r, w); err != nil {
+		log.Printf("Session save error: %v", err)
 		http.Error(w, "Failed to save session: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -113,7 +121,20 @@ func (h *AuthHandler) SignUp(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/html")
 		tokenData := TokenDisplayData{Token: token}
 		if err := h.templates.ExecuteTemplate(w, "token_display.html", tokenData); err != nil {
-			http.Error(w, "Template error: "+err.Error(), http.StatusInternalServerError)
+			log.Printf("Template execution error: %v", err)
+			// Fallback: return a simple HTML response with the token
+			w.Header().Set("Content-Type", "text/html")
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte(`<div class="token-display">
+				<h2>Account Created Successfully!</h2>
+				<p>Your anonymous token:</p>
+				<div class="token-box">
+					<code id="token-code">` + token + `</code>
+					<button onclick="navigator.clipboard.writeText('` + token + `')">Copy</button>
+				</div>
+				<p><strong>Important:</strong> Save this token! It's your only way to log back in.</p>
+				<a href="/dashboard" class="btn-primary">Go to Dashboard</a>
+			</div>`))
 			return
 		}
 		return
