@@ -62,6 +62,9 @@
                                     {{$recs := $moodItem.Recommendation.Recommendations}}
                                     {{$cleanRecs := replace $recs "**" ""}}
                                     {{$cleanRecs = replace $cleanRecs "*" ""}}
+                                    {{$cleanRecs = replace $cleanRecs "#" ""}}
+                                    {{$cleanRecs = replace $cleanRecs "_" ""}}
+                                    {{$cleanRecs = replace $cleanRecs "`" ""}}
                                     {{$cleanRecs}}
                                 </div>
                             </div>
@@ -94,6 +97,9 @@
                                     {{$recs := $stressItem.Recommendation.Recommendations}}
                                     {{$cleanRecs := replace $recs "**" ""}}
                                     {{$cleanRecs = replace $cleanRecs "*" ""}}
+                                    {{$cleanRecs = replace $cleanRecs "#" ""}}
+                                    {{$cleanRecs = replace $cleanRecs "_" ""}}
+                                    {{$cleanRecs = replace $cleanRecs "`" ""}}
                                     {{$cleanRecs}}
                                 </div>
                             </div>
@@ -126,6 +132,9 @@
                                     {{$recs := $anxietyItem.Recommendation.Recommendations}}
                                     {{$cleanRecs := replace $recs "**" ""}}
                                     {{$cleanRecs = replace $cleanRecs "*" ""}}
+                                    {{$cleanRecs = replace $cleanRecs "#" ""}}
+                                    {{$cleanRecs = replace $cleanRecs "_" ""}}
+                                    {{$cleanRecs = replace $cleanRecs "`" ""}}
                                     {{$cleanRecs}}
                                 </div>
                             </div>
@@ -158,6 +167,9 @@
                                     {{$recs := $wellnessItem.Recommendation.Recommendations}}
                                     {{$cleanRecs := replace $recs "**" ""}}
                                     {{$cleanRecs = replace $cleanRecs "*" ""}}
+                                    {{$cleanRecs = replace $cleanRecs "#" ""}}
+                                    {{$cleanRecs = replace $cleanRecs "_" ""}}
+                                    {{$cleanRecs = replace $cleanRecs "`" ""}}
                                     {{$cleanRecs}}
                                 </div>
                             </div>
@@ -278,7 +290,12 @@
             });
         }
         
-        // REMOVED: No auto-reload on quiz completion
+        // Prevent any automatic page reloads
+        window.addEventListener('beforeunload', function(e) {
+            // Don't prevent normal navigation, only accidental refreshes during quiz
+        });
+        
+        // Listen for quiz completion - but DON'T auto-reload
         // Results stay inline in the quiz container
         // User can manually refresh or navigate to see updated scores
         

@@ -159,14 +159,19 @@ Result: %s
 Answers:
 %s
 
-Provide exactly 2 recommendations (each recommendation should be exactly 2 sentences) that are:
+Provide exactly 2 recommendations. Each recommendation must be EXACTLY 2 sentences (no more, no less). Requirements:
+- Each recommendation should be 2 concise sentences
+- First sentence: What to do
+- Second sentence: Why it helps or how to do it
+- NO markdown formatting (no **, no *, no #, no bullets)
+- NO bold text, NO italic text
+- Plain text only
 - Specific and practical
 - Appropriate for the score level
 - Focused on mental health and wellness
 - Encouraging and supportive
-- Brief and actionable
 
-Format as a numbered list with short, clear sentences.`, response.Score, response.Result, answersStr)
+Format as a numbered list (1. and 2.) with plain text only.`, response.Score, response.Result, answersStr)
 
 	messages := []llm.Message{
 		{Role: "user", Content: prompt},
