@@ -257,14 +257,19 @@ func (c *Client) listGeminiModels(ctx context.Context) ([]string, error) {
 			// Extract model name (format: models/gemini-xxx)
 			modelName := strings.TrimPrefix(model.Name, "models/")
 			
-			// Skip experimental models (they have stricter free tier limits)
-			if strings.Contains(modelName, "-exp") || strings.Contains(modelName, "experimental") {
-				log.Printf("⏭️  Skipping experimental model: %s (%s)", modelName, model.DisplayName)
+			// Skip experimental models (they have stricter free tier limits or no free tier access)
+			// Also skip preview models that might have limits
+			lowerName := strings.ToLower(modelName)
+			if strings.Contains(lowerName, "-exp") || 
+			   strings.Contains(lowerName, "experimental") ||
+			   strings.Contains(lowerName, "-preview") ||
+			   strings.Contains(lowerName, "2.5") { // Skip 2.5 models as they may have stricter limits
+				log.Printf("⏭️  Skipping model (experimental/preview/2.5): %s (%s)", modelName, model.DisplayName)
 				continue
 			}
 			
 			availableModels = append(availableModels, modelName)
-			log.Printf("✅ Available model: %s (%s)", modelName, model.DisplayName)
+			log.Printf("✅ Available free-tier model: %s (%s)", modelName, model.DisplayName)
 		}
 	}
 	
@@ -362,7 +367,7 @@ func (c *Client) chatGemini(ctx context.Context, conversationHistory []Message, 
 	}
 	
 	// Try to get available models first, then use the first one that supports generateContent
-	// For free tier, prioritize: gemini-pro, gemini-1.5-flash (best for free tier)
+	// For free tier, prioritize: gemini-1.5-flash (best), gemini-pro (stable)
 	modelName := "gemini-pro" // Default fallback for free tier
 	
 	// Try to list available models
@@ -387,13 +392,25 @@ func (c *Client) chatGemini(ctx context.Context, conversationHistory []Message, 
 			}
 		}
 		if !found {
-			// Use first available non-experimental model
-			modelName = availableModels[0]
-			log.Printf("✅ Using first available model: %s", modelName)
+			// Use first available non-experimental model (should already be filtered)
+			if len(availableModels) > 0 {
+				modelName = availableModels[0]
+				log.Printf("✅ Using first available filtered model: %s", modelName)
+			} else {
+				log.Printf("⚠️  No suitable models found after filtering, using default: %s", modelName)
+			}
 		}
-		log.Printf("📊 Model selection: %s (from %d available models)", modelName, len(availableModels))
+		log.Printf("📊 Model selection: %s (from %d filtered free-tier models)", modelName, len(availableModels))
 	} else {
 		log.Printf("⚠️  Could not list models, using default: %s (error: %v)", modelName, err)
+	}
+	
+	// Double-check: Never use experimental or 2.5 models
+	if strings.Contains(strings.ToLower(modelName), "-exp") || 
+	   strings.Contains(strings.ToLower(modelName), "2.5") ||
+	   strings.Contains(strings.ToLower(modelName), "-preview") {
+		log.Printf("🚨 ERROR: Selected model %s is experimental/preview! Falling back to gemini-pro", modelName)
+		modelName = "gemini-pro"
 	}
 	
 	endpoint := fmt.Sprintf("%s/models/%s:generateContent?key=%s", apiURL, modelName, c.apiKey)
