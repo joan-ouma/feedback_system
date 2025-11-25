@@ -2,7 +2,7 @@
     <h2>{{.quiz.Title}}</h2>
     <p class="quiz-description">{{.quiz.Description}}</p>
     
-    <form id="quiz-form" onsubmit="submitQuiz(event)">
+    <form id="quiz-form" onsubmit="return submitQuiz(event)">
         <input type="hidden" name="quiz_id" id="quiz-id-input" value="{{.quiz.ID}}">
         <input type="hidden" name="quiz_type" id="quiz-type-input" value="{{.quiz.Type}}">
         
@@ -35,25 +35,38 @@
 <script>
 function submitQuiz(e) {
     e.preventDefault();
-    const formData = new FormData(e.target);
+    e.stopPropagation();
+    
+    const form = e.target;
+    const formData = new FormData(form);
     const quizId = document.getElementById('quiz-id-input').value || formData.get('quiz_id');
     const quizType = document.getElementById('quiz-type-input').value || '';
     const answers = {};
     
     for (let [key, value] of formData.entries()) {
-        if (key !== 'quiz_id') {
+        if (key !== 'quiz_id' && key !== 'quiz_type') {
             answers[key] = value;
         }
     }
     
-    // Find the quiz container - try multiple possible IDs
-    const content = document.getElementById('quiz-content') || 
-                   document.querySelector('.quiz-form') || 
-                   document.querySelector('main') ||
-                   document.body;
+    // ALWAYS update quiz-content div - this is where the quiz is displayed
+    const content = document.getElementById('quiz-content');
+    if (!content) {
+        console.error('quiz-content div not found!');
+        return false;
+    }
     
+    // Store original content in case we need to restore
     const originalContent = content.innerHTML;
     content.innerHTML = '<div class="loading">Submitting quiz...</div>';
+    
+    // Disable submit button to prevent double submission
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const originalBtnText = submitBtn ? submitBtn.textContent : '';
+    if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Submitting...';
+    }
     
     fetch('/api/quiz/submit', {
         method: 'POST',
@@ -106,22 +119,52 @@ function submitQuiz(e) {
         }
         
         if (data.recommendation && data.recommendation.recommendations) {
-            // Format recommendations as concise bullet points
-            const recs = data.recommendation.recommendations.split('\n').filter(line => line.trim().length > 0);
+            // Format recommendations as clean, professional text
+            let recText = data.recommendation.recommendations;
+            
+            // Remove markdown formatting (**bold**, *italic*, etc.)
+            recText = recText.replace(/\*\*/g, ''); // Remove **
+            recText = recText.replace(/\*/g, ''); // Remove single *
+            recText = recText.replace(/#{1,6}\s/g, ''); // Remove markdown headers
+            recText = recText.replace(/\[([^\]]+)\]\([^\)]+\)/g, '$1'); // Remove markdown links
+            
+            // Split into lines and clean up
+            const recs = recText.split('\n')
+                .map(line => line.trim())
+                .filter(line => line.length > 0 && !line.match(/^[-*]\s*$/)); // Remove empty lines and single dashes/asterisks
+            
             html += `
-                <div class="recommendations-box" style="margin-top: 20px; padding: 20px; background: #e7f3ff; border-left: 4px solid #007bff; border-radius: 4px;">
-                    <h4 style="margin-top: 0; color: #007bff; margin-bottom: 15px;">💡 Quick Recommendations:</h4>
-                    <ul style="margin: 0; padding-left: 20px; color: #495057;">
+                <div class="recommendations-box" style="margin-top: 20px; padding: 24px; background: linear-gradient(135deg, #e7f3ff 0%, #f0f8ff 100%); border-left: 5px solid #007bff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,123,255,0.1);">
+                    <h4 style="margin: 0 0 16px 0; color: #007bff; font-size: 18px; font-weight: 600;">💡 Personalized Recommendations</h4>
+                    <div style="color: #495057; line-height: 1.7; font-size: 15px;">
             `;
-            recs.forEach(rec => {
-                // Clean up numbering and formatting
-                let cleanRec = rec.replace(/^\d+[\.\)]\s*/, '').trim();
-                if (cleanRec.length > 0) {
-                    html += `<li style="margin-bottom: 8px; line-height: 1.5;">${escapeHtml(cleanRec)}</li>`;
+            
+            // Display as clean paragraphs or numbered list
+            let isNumbered = false;
+            recs.forEach((rec, index) => {
+                // Check if it's a numbered list
+                if (rec.match(/^\d+[\.\)]\s/)) {
+                    isNumbered = true;
+                    let cleanRec = rec.replace(/^\d+[\.\)]\s*/, '').trim();
+                    if (cleanRec.length > 0) {
+                        html += `<div style="margin-bottom: 12px; padding-left: 8px;"><span style="color: #007bff; font-weight: 600;">${index + 1}.</span> <span style="color: #495057;">${escapeHtml(cleanRec)}</span></div>`;
+                    }
+                } else if (rec.match(/^[-*•]\s/)) {
+                    // Bullet points
+                    let cleanRec = rec.replace(/^[-*•]\s*/, '').trim();
+                    if (cleanRec.length > 0) {
+                        html += `<div style="margin-bottom: 12px; padding-left: 20px; position: relative;"><span style="position: absolute; left: 0; color: #007bff;">•</span> <span style="color: #495057;">${escapeHtml(cleanRec)}</span></div>`;
+                    }
+                } else {
+                    // Regular paragraph
+                    if (rec.length > 0) {
+                        html += `<div style="margin-bottom: 12px; color: #495057;">${escapeHtml(rec)}</div>`;
+                    }
                 }
             });
+            
             html += `
-                    </ul>
+                    </div>
                 </div>
             `;
         } else {
@@ -141,22 +184,24 @@ function submitQuiz(e) {
             </div>
         `;
         
+        // Update the quiz-content div with results - NO PAGE RELOAD
         content.innerHTML = html;
         
-        // Store flag that quiz was submitted (for when user navigates to quizzes page)
+        // Re-enable submit button (if it still exists in DOM)
+        const btn = form.querySelector('button[type="submit"]');
+        if (btn) {
+            btn.disabled = false;
+        }
+        
+        // Store flag that quiz was submitted (for when user manually navigates to quizzes page)
         if (typeof sessionStorage !== 'undefined') {
             sessionStorage.setItem('quiz-just-submitted', 'true');
         }
         
-        // Notify parent page to refresh quiz scores (if embedded in iframe)
-        if (window.parent && window.parent !== window) {
-            setTimeout(() => {
-                window.parent.postMessage({type: 'quiz-completed'}, '*');
-            }, 500);
-        }
+        // DO NOT reload page - results stay inline
+        // User can manually click "View All Quizzes" if they want to see updated scores
         
-        // Results stay inline - no auto-redirect
-        // User can click "View All Quizzes" to see updated scores on quizzes page
+        return false; // Prevent any form submission
     })
     .catch(error => {
         console.error('Error submitting quiz:', error);
@@ -167,7 +212,18 @@ function submitQuiz(e) {
             errorMsg = error.message;
         }
         content.innerHTML = `<div class="error" style="padding: 15px; background: #f8d7da; color: #721c24; border-radius: 4px;">${escapeHtml(errorMsg)}</div>`;
+        
+        // Re-enable submit button on error
+        const btn = form.querySelector('button[type="submit"]');
+        if (btn) {
+            btn.disabled = false;
+            btn.textContent = originalBtnText || 'Submit Quiz';
+        }
+        
+        return false; // Prevent any form submission
     });
+    
+    return false; // Prevent form submission
 }
 
 function escapeHtml(text) {

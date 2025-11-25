@@ -159,7 +159,7 @@ Result: %s
 Answers:
 %s
 
-Provide 2-3 concise recommendations (1-2 sentences each) that are:
+Provide exactly 2 recommendations (each recommendation should be exactly 2 sentences) that are:
 - Specific and practical
 - Appropriate for the score level
 - Focused on mental health and wellness

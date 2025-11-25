@@ -17,6 +17,7 @@ import (
 type FeedbackHandler struct {
 	feedbackService *service.FeedbackService
 	authService     *service.AuthService
+	quizService     *service.QuizService
 	templates       *template.Template
 }
 
@@ -33,7 +34,7 @@ type FeedbacksViewData struct {
 	Feedbacks []FeedbackViewData
 }
 
-func NewFeedbackHandler(feedbackService *service.FeedbackService, authService *service.AuthService, templateDir string) (*FeedbackHandler, error) {
+func NewFeedbackHandler(feedbackService *service.FeedbackService, authService *service.AuthService, quizService *service.QuizService, templateDir string) (*FeedbackHandler, error) {
 	tmpl := template.New("").Funcs(template.FuncMap{
 		"split": func(s, sep string) []string {
 			return strings.Split(s, sep)
@@ -68,6 +69,7 @@ func NewFeedbackHandler(feedbackService *service.FeedbackService, authService *s
 	return &FeedbackHandler{
 		feedbackService: feedbackService,
 		authService:     authService,
+		quizService:     quizService,
 		templates:       templates,
 	}, nil
 }
@@ -227,9 +229,27 @@ func (h *FeedbackHandler) Dashboard(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Expires", "0")
 	w.Header().Set("Content-Type", "text/html")
 	
+	// Get user's quiz history for dashboard
+	var quizHistory map[string]*service.QuizHistoryItem
+	if h.quizService != nil {
+		token := middleware.GetTokenFromContext(r.Context())
+		if token != "" {
+			user, err := h.authService.Authenticate(r.Context(), token)
+			if err == nil {
+				history, err := h.quizService.GetUserQuizHistory(r.Context(), user.ID)
+				if err == nil {
+					quizHistory = history
+				}
+			}
+		}
+	}
+	
 	// Try template first, fallback to file serve
 	if h.templates != nil {
-		if err := h.templates.ExecuteTemplate(w, "dashboard.html", nil); err == nil {
+		data := map[string]interface{}{
+			"QuizHistory": quizHistory,
+		}
+		if err := h.templates.ExecuteTemplate(w, "dashboard.html", data); err == nil {
 			return
 		}
 	}

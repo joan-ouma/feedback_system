@@ -25,6 +25,106 @@
             <p>Submit anonymous feedback or consult with our AI counselor</p>
         </div>
         
+        <!-- Quiz Results Summary on Dashboard -->
+        {{if .QuizHistory}}
+        <div class="card" style="margin-bottom: 30px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 25px; box-shadow: 0 8px 24px rgba(102,126,234,0.3);">
+            <h2 style="margin-top: 0; color: white; margin-bottom: 20px; font-size: 24px; text-align: center;">📊 Your Mental Health Assessment Results</h2>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px;">
+                {{$moodItem := index .QuizHistory "mood_assessment"}}
+                {{$stressItem := index .QuizHistory "stress_level"}}
+                {{$anxietyItem := index .QuizHistory "anxiety_check"}}
+                {{$wellnessItem := index .QuizHistory "wellness"}}
+                
+                {{if or (and $moodItem $moodItem.Response) (and $stressItem $stressItem.Response) (and $anxietyItem $anxietyItem.Response) (and $wellnessItem $wellnessItem.Response)}}
+                    {{if and $moodItem $moodItem.Response}}
+                        <div style="background: rgba(255,255,255,0.2); padding: 15px; border-radius: 10px; backdrop-filter: blur(10px);">
+                            <h4 style="margin: 0 0 10px 0; color: white; font-size: 16px;">📊 Mood</h4>
+                            {{$score := $moodItem.Response.Score}}
+                            {{$scoreColor := "28a745"}}
+                            {{if le $score 4}}{{$scoreColor = "dc3545"}}{{else if le $score 6}}{{$scoreColor = "ffc107"}}{{end}}
+                            <div style="text-align: center; margin-bottom: 10px;">
+                                <span style="background: #{{$scoreColor}}; color: white; padding: 8px 16px; border-radius: 20px; font-weight: bold; font-size: 20px;">{{$score}}/10</span>
+                            </div>
+                            {{if and $moodItem.Recommendation $moodItem.Recommendation.Recommendations}}
+                                <div style="font-size: 12px; line-height: 1.6; color: rgba(255,255,255,0.95);">
+                                    {{$recs := $moodItem.Recommendation.Recommendations}}
+                                    {{$cleanRecs := replace $recs "**" ""}}
+                                    {{$cleanRecs = replace $cleanRecs "*" ""}}
+                                    {{$cleanRecs}}
+                                </div>
+                            {{end}}
+                        </div>
+                    {{end}}
+                    
+                    {{if and $stressItem $stressItem.Response}}
+                        <div style="background: rgba(255,255,255,0.2); padding: 15px; border-radius: 10px; backdrop-filter: blur(10px);">
+                            <h4 style="margin: 0 0 10px 0; color: white; font-size: 16px;">😰 Stress</h4>
+                            {{$score := $stressItem.Response.Score}}
+                            {{$scoreColor := "28a745"}}
+                            {{if le $score 4}}{{$scoreColor = "dc3545"}}{{else if le $score 6}}{{$scoreColor = "ffc107"}}{{end}}
+                            <div style="text-align: center; margin-bottom: 10px;">
+                                <span style="background: #{{$scoreColor}}; color: white; padding: 8px 16px; border-radius: 20px; font-weight: bold; font-size: 20px;">{{$score}}/10</span>
+                            </div>
+                            {{if and $stressItem.Recommendation $stressItem.Recommendation.Recommendations}}
+                                <div style="font-size: 12px; line-height: 1.6; color: rgba(255,255,255,0.95);">
+                                    {{$recs := $stressItem.Recommendation.Recommendations}}
+                                    {{$cleanRecs := replace $recs "**" ""}}
+                                    {{$cleanRecs = replace $cleanRecs "*" ""}}
+                                    {{$cleanRecs}}
+                                </div>
+                            {{end}}
+                        </div>
+                    {{end}}
+                    
+                    {{if and $anxietyItem $anxietyItem.Response}}
+                        <div style="background: rgba(255,255,255,0.2); padding: 15px; border-radius: 10px; backdrop-filter: blur(10px);">
+                            <h4 style="margin: 0 0 10px 0; color: white; font-size: 16px;">😟 Anxiety</h4>
+                            {{$score := $anxietyItem.Response.Score}}
+                            {{$scoreColor := "28a745"}}
+                            {{if le $score 4}}{{$scoreColor = "dc3545"}}{{else if le $score 6}}{{$scoreColor = "ffc107"}}{{end}}
+                            <div style="text-align: center; margin-bottom: 10px;">
+                                <span style="background: #{{$scoreColor}}; color: white; padding: 8px 16px; border-radius: 20px; font-weight: bold; font-size: 20px;">{{$score}}/10</span>
+                            </div>
+                            {{if and $anxietyItem.Recommendation $anxietyItem.Recommendation.Recommendations}}
+                                <div style="font-size: 12px; line-height: 1.6; color: rgba(255,255,255,0.95);">
+                                    {{$recs := $anxietyItem.Recommendation.Recommendations}}
+                                    {{$cleanRecs := replace $recs "**" ""}}
+                                    {{$cleanRecs = replace $cleanRecs "*" ""}}
+                                    {{$cleanRecs}}
+                                </div>
+                            {{end}}
+                        </div>
+                    {{end}}
+                    
+                    {{if and $wellnessItem $wellnessItem.Response}}
+                        <div style="background: rgba(255,255,255,0.2); padding: 15px; border-radius: 10px; backdrop-filter: blur(10px);">
+                            <h4 style="margin: 0 0 10px 0; color: white; font-size: 16px;">💚 Wellness</h4>
+                            {{$score := $wellnessItem.Response.Score}}
+                            {{$scoreColor := "28a745"}}
+                            {{if le $score 4}}{{$scoreColor = "dc3545"}}{{else if le $score 6}}{{$scoreColor = "ffc107"}}{{end}}
+                            <div style="text-align: center; margin-bottom: 10px;">
+                                <span style="background: #{{$scoreColor}}; color: white; padding: 8px 16px; border-radius: 20px; font-weight: bold; font-size: 20px;">{{$score}}/10</span>
+                            </div>
+                            {{if and $wellnessItem.Recommendation $wellnessItem.Recommendation.Recommendations}}
+                                <div style="font-size: 12px; line-height: 1.6; color: rgba(255,255,255,0.95);">
+                                    {{$recs := $wellnessItem.Recommendation.Recommendations}}
+                                    {{$cleanRecs := replace $recs "**" ""}}
+                                    {{$cleanRecs = replace $cleanRecs "*" ""}}
+                                    {{$cleanRecs}}
+                                </div>
+                            {{end}}
+                        </div>
+                    {{end}}
+                {{else}}
+                    <div style="grid-column: 1 / -1; text-align: center; padding: 20px;">
+                        <p style="margin: 0; opacity: 0.9;">Complete quizzes to see your mental health assessment results here</p>
+                        <a href="/quizzes" class="btn-primary" style="margin-top: 15px; display: inline-block; background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3);">Take a Quiz</a>
+                    </div>
+                {{end}}
+            </div>
+        </div>
+        {{end}}
+        
         <div class="dashboard-grid">
             <div class="card">
                 <h2>Submit Feedback</h2>
@@ -92,13 +192,14 @@
                     target: '#feedbacks-list',
                     swap: 'innerHTML'
                 });
+                // Load quiz results summary
+                loadQuizResultsSummary();
             });
         } else {
             htmx.ajax('GET', '/api/feedback', {
                 target: '#feedbacks-list',
                 swap: 'innerHTML'
             });
-        }
         
         function saveToken() {
             alert('Your token is saved in your session. Make sure to save it securely if you want to access your account from another device.');

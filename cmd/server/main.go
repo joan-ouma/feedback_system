@@ -81,8 +81,12 @@ func main() {
 	moodService := service.NewMoodService(moodRepo, quoteRepo, llmClient)
 	quizService := service.NewQuizService(quizRepo, llmClient)
 
-	// Load templates
-	tmpl := template.New("")
+	// Load templates with helper functions
+	tmpl := template.New("").Funcs(template.FuncMap{
+		"replace": func(s, old, new string) string {
+			return strings.ReplaceAll(s, old, new)
+		},
+	})
 	templatePattern := "templates/*.html"
 	templates, err := tmpl.ParseGlob(templatePattern)
 	if err != nil {
@@ -94,7 +98,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to initialize auth handler: %v", err)
 	}
-	feedbackHandler, err := handlers.NewFeedbackHandler(feedbackService, authService, "templates")
+	feedbackHandler, err := handlers.NewFeedbackHandler(feedbackService, authService, quizService, "templates")
 	if err != nil {
 		log.Fatalf("Failed to initialize feedback handler: %v", err)
 	}
@@ -172,7 +176,7 @@ func maskConnectionString(uri string) string {
 	if idx := strings.Index(uri, "@"); idx > 0 {
 		if userPassIdx := strings.Index(uri, "://"); userPassIdx > 0 {
 			prefix := uri[:userPassIdx+3]
-			userPass := uri[userPassIdx+3:idx]
+			userPass := uri[userPassIdx+3 : idx]
 			if colonIdx := strings.Index(userPass, ":"); colonIdx > 0 {
 				user := userPass[:colonIdx]
 				return prefix + user + ":***@" + uri[idx+1:]
@@ -216,4 +220,3 @@ func initTracing(jaegerEndpoint string) error {
 
 	return nil
 }
-
