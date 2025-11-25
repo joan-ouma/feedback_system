@@ -58,6 +58,8 @@ body {
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     padding: 1rem 0;
     margin-bottom: 2rem;
+    position: relative;
+    z-index: 1000;
 }
 
 .navbar .container {
@@ -89,6 +91,130 @@ body {
 
 .nav-links a:hover {
     background: #f0f0f0;
+}
+
+/* Mobile Menu Toggle (Hamburger) */
+.menu-toggle {
+    display: none;
+    flex-direction: column;
+    justify-content: space-around;
+    width: 30px;
+    height: 30px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    z-index: 1001;
+}
+
+.menu-toggle span {
+    width: 100%;
+    height: 3px;
+    background: #333;
+    border-radius: 3px;
+    transition: all 0.3s ease;
+    transform-origin: center;
+}
+
+.menu-toggle.active span:nth-child(1) {
+    transform: rotate(45deg) translate(8px, 8px);
+}
+
+.menu-toggle.active span:nth-child(2) {
+    opacity: 0;
+}
+
+.menu-toggle.active span:nth-child(3) {
+    transform: rotate(-45deg) translate(8px, -8px);
+}
+
+/* Mobile Sidebar */
+.mobile-sidebar {
+    position: fixed;
+    top: 0;
+    left: -280px;
+    width: 280px;
+    height: 100vh;
+    background: #fff;
+    box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+    transition: left 0.3s ease;
+    z-index: 1002;
+    overflow-y: auto;
+    padding-top: 70px;
+}
+
+.mobile-sidebar.active {
+    left: 0;
+}
+
+.mobile-sidebar .sidebar-header {
+    padding: 1rem;
+    border-bottom: 1px solid #e9ecef;
+    margin-bottom: 1rem;
+}
+
+.mobile-sidebar .sidebar-header .logo {
+    font-size: 1.25rem;
+    display: block;
+    margin-bottom: 0.5rem;
+}
+
+.mobile-sidebar .sidebar-nav {
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+}
+
+.mobile-sidebar .sidebar-nav a {
+    display: block;
+    padding: 1rem 1.5rem;
+    color: #333;
+    text-decoration: none;
+    border-bottom: 1px solid #f0f0f0;
+    transition: background 0.2s;
+    font-size: 1rem;
+}
+
+.mobile-sidebar .sidebar-nav a:hover,
+.mobile-sidebar .sidebar-nav a.active {
+    background: #f8f9fa;
+    color: #007bff;
+}
+
+.mobile-sidebar .sidebar-nav .btn-secondary {
+    margin: 1rem 1.5rem;
+    width: calc(100% - 3rem);
+    text-align: center;
+    padding: 0.75rem;
+    background: #6c757d;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 1rem;
+}
+
+.mobile-sidebar .sidebar-nav .btn-secondary:hover {
+    background: #5a6268;
+}
+
+/* Overlay for mobile sidebar */
+.sidebar-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1001;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.sidebar-overlay.active {
+    display: block;
+    opacity: 1;
 }
 
 /* Auth Pages */
@@ -828,21 +954,19 @@ input[type="range"]::-moz-range-thumb {
         font-size: 1.25rem;
     }
     
+    /* Hide desktop nav links on mobile */
     .nav-links {
+        display: none;
+    }
+    
+    /* Show hamburger menu on mobile */
+    .menu-toggle {
         display: flex;
-        flex-direction: row;
-        gap: 0.5rem;
-        flex-wrap: wrap;
     }
     
-    .nav-links a {
-        padding: 0.4rem 0.75rem;
-        font-size: 0.9rem;
-    }
-    
-    .nav-links .btn-secondary {
-        padding: 0.4rem 0.75rem;
-        font-size: 0.9rem;
+    /* Prevent body scroll when sidebar is open */
+    body.sidebar-open {
+        overflow: hidden;
     }
     
     /* Cards */

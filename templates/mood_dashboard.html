@@ -8,8 +8,30 @@
     <link rel="stylesheet" href="/static/css/style.css">
 </head>
 <body>
+    <!-- Mobile Sidebar Overlay -->
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+    
+    <!-- Mobile Sidebar -->
+    <div class="mobile-sidebar" id="mobile-sidebar">
+        <div class="sidebar-header">
+            <a href="/dashboard" class="logo">Campus Support</a>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="/dashboard">📊 Dashboard</a>
+            <a href="/mood" class="active">😊 Mood Tracking</a>
+            <a href="/quizzes">📝 Quizzes</a>
+            <a href="/consultation">💬 Consultation</a>
+            <button hx-post="/logout" hx-target="body" class="btn-secondary">🚪 Logout</button>
+        </nav>
+    </div>
+    
     <nav class="navbar">
         <div class="container">
+            <button class="menu-toggle" id="menu-toggle" aria-label="Toggle menu">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
             <a href="/dashboard" class="logo">Campus Support</a>
             <div class="nav-links">
                 <a href="/dashboard">Dashboard</a>
@@ -86,6 +108,40 @@
     </main>
 
     <script>
+        // Mobile sidebar toggle
+        (function() {
+            const menuToggle = document.getElementById('menu-toggle');
+            const sidebar = document.getElementById('mobile-sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+            
+            function toggleSidebar() {
+                const isActive = sidebar.classList.contains('active');
+                sidebar.classList.toggle('active');
+                overlay.classList.toggle('active');
+                menuToggle.classList.toggle('active');
+                document.body.classList.toggle('sidebar-open');
+            }
+            
+            if (menuToggle) {
+                menuToggle.addEventListener('click', toggleSidebar);
+            }
+            
+            if (overlay) {
+                overlay.addEventListener('click', toggleSidebar);
+            }
+            
+            // Close sidebar when clicking on a link
+            const sidebarLinks = sidebar.querySelectorAll('.sidebar-nav a');
+            sidebarLinks.forEach(link => {
+                link.addEventListener('click', function() {
+                    // Don't close for logout button (handled by HTMX)
+                    if (!this.classList.contains('btn-secondary')) {
+                        setTimeout(toggleSidebar, 300);
+                    }
+                });
+            });
+        })();
+        
         // Load quote and history on page load
         document.addEventListener('DOMContentLoaded', function() {
             htmx.ajax('GET', '/api/mood/quote', {
