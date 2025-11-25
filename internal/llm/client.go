@@ -195,6 +195,75 @@ func (c *Client) Chat(ctx context.Context, conversationHistory []Message, userMe
 	return response, nil
 }
 
+// listGeminiModels lists available Gemini models
+func (c *Client) listGeminiModels(ctx context.Context) ([]string, error) {
+	apiURL := c.apiURL
+	if !strings.HasSuffix(apiURL, "/v1beta") && !strings.HasSuffix(apiURL, "/v1") {
+		if strings.Contains(apiURL, "generativelanguage.googleapis.com") {
+			apiURL = strings.TrimSuffix(apiURL, "/") + "/v1beta"
+		}
+	}
+	
+	endpoint := fmt.Sprintf("%s/models?key=%s", apiURL, c.apiKey)
+	log.Printf("🔵 Listing available Gemini models: %s", endpoint)
+	
+	req, err := http.NewRequestWithContext(ctx, "GET", endpoint, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create list models request: %w", err)
+	}
+	
+	resp, err := c.client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to send list models request: %w", err)
+	}
+	defer resp.Body.Close()
+	
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read list models response: %w", err)
+	}
+	
+	if resp.StatusCode != http.StatusOK {
+		log.Printf("❌ Failed to list models: %s", string(body))
+		return nil, fmt.Errorf("failed to list models: status %d, %s", resp.StatusCode, string(body))
+	}
+	
+	type ModelInfo struct {
+		Name         string   `json:"name"`
+		DisplayName  string   `json:"displayName"`
+		SupportedMethods []string `json:"supportedGenerationMethods"`
+	}
+	
+	type ListModelsResponse struct {
+		Models []ModelInfo `json:"models"`
+	}
+	
+	var listResp ListModelsResponse
+	if err := json.Unmarshal(body, &listResp); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal models list: %w", err)
+	}
+	
+	var availableModels []string
+	for _, model := range listResp.Models {
+		// Check if model supports generateContent
+		supportsGenerateContent := false
+		for _, method := range model.SupportedMethods {
+			if method == "generateContent" {
+				supportsGenerateContent = true
+				break
+			}
+		}
+		if supportsGenerateContent {
+			// Extract model name (format: models/gemini-xxx)
+			modelName := strings.TrimPrefix(model.Name, "models/")
+			availableModels = append(availableModels, modelName)
+			log.Printf("✅ Available model: %s (%s)", modelName, model.DisplayName)
+		}
+	}
+	
+	return availableModels, nil
+}
+
 // chatGemini handles Gemini API requests (different format)
 func (c *Client) chatGemini(ctx context.Context, conversationHistory []Message, userMessage string) (string, error) {
 	ctx, span := llmTracer.Start(ctx, "LLM.ChatGemini")
@@ -285,8 +354,37 @@ func (c *Client) chatGemini(ctx context.Context, conversationHistory []Message, 
 		}
 	}
 	
-	// Use Gemini 3 Pro Preview - hardcoded, no configuration needed
-	modelName := "gemini-3.0-pro-preview"
+	// Try to get available models first, then use the first one that supports generateContent
+	// For free tier, common models are: gemini-pro, gemini-1.5-flash, gemini-1.5-pro
+	modelName := "gemini-pro" // Default fallback for free tier
+	
+	// Try to list available models
+	availableModels, err := c.listGeminiModels(ctx)
+	if err == nil && len(availableModels) > 0 {
+		// Prefer gemini-pro for free tier, then gemini-1.5-flash, then any other
+		preferredModels := []string{"gemini-pro", "gemini-1.5-flash", "gemini-1.5-pro"}
+		found := false
+		for _, preferred := range preferredModels {
+			for _, available := range availableModels {
+				if available == preferred {
+					modelName = preferred
+					found = true
+					break
+				}
+			}
+			if found {
+				break
+			}
+		}
+		if !found {
+			// Use first available model
+			modelName = availableModels[0]
+		}
+		log.Printf("✅ Using model: %s (from %d available models)", modelName, len(availableModels))
+	} else {
+		log.Printf("⚠️  Could not list models, using default: %s (error: %v)", modelName, err)
+	}
+	
 	endpoint := fmt.Sprintf("%s/models/%s:generateContent?key=%s", apiURL, modelName, c.apiKey)
 	log.Printf("🔵 Calling Gemini API: %s", endpoint)
 	log.Printf("🔵 Request body: %s", string(jsonData))
