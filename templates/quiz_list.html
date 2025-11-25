@@ -242,9 +242,20 @@
                 // Reload page after a short delay to show updated scores
                 setTimeout(() => {
                     window.location.reload();
-                }, 1500);
+                }, 2000);
             }
         });
+        
+        // Also check if we're coming back from a quiz submission
+        // by checking URL parameters or session storage
+        if (sessionStorage.getItem('quiz-just-submitted') === 'true') {
+            sessionStorage.removeItem('quiz-just-submitted');
+            // Scroll to results section
+            const resultsSection = document.querySelector('.card[style*="gradient"]');
+            if (resultsSection) {
+                resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        }
     </script>
 </body>
 </html>

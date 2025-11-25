@@ -62,7 +62,7 @@ func (h *QuizHandler) GetQuiz(w http.ResponseWriter, r *http.Request) {
 		quizData := map[string]interface{}{
 			"quiz": map[string]interface{}{
 				"ID":          quiz.ID.Hex(),
-				"Type":        quiz.Type,
+				"Type":        string(quiz.Type),
 				"Title":       quiz.Title,
 				"Description": quiz.Description,
 				"Questions":   quiz.Questions,

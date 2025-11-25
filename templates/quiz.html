@@ -4,6 +4,7 @@
     
     <form id="quiz-form" onsubmit="submitQuiz(event)">
         <input type="hidden" name="quiz_id" id="quiz-id-input" value="{{.quiz.ID}}">
+        <input type="hidden" name="quiz_type" id="quiz-type-input" value="{{.quiz.Type}}">
         
         {{range $qIndex, $question := .quiz.Questions}}
         <div class="quiz-question">
@@ -36,6 +37,7 @@ function submitQuiz(e) {
     e.preventDefault();
     const formData = new FormData(e.target);
     const quizId = document.getElementById('quiz-id-input').value || formData.get('quiz_id');
+    const quizType = document.getElementById('quiz-type-input').value || '';
     const answers = {};
     
     for (let [key, value] of formData.entries()) {
@@ -133,7 +135,7 @@ function submitQuiz(e) {
         html += `
                 </div>
                 <div style="text-align: center;">
-                    <button onclick="location.reload()" class="btn-primary" style="margin-right: 10px;">Take Another Quiz</button>
+                    <button onclick="retakeQuiz('${quizType}')" class="btn-primary" style="margin-right: 10px;">Retake Quiz</button>
                     <button onclick="window.location.href='/quizzes'" class="btn-secondary">View All Quizzes</button>
                 </div>
             </div>
@@ -141,10 +143,20 @@ function submitQuiz(e) {
         
         content.innerHTML = html;
         
-        // Notify parent page to refresh quiz scores (if embedded)
-        if (window.parent && window.parent !== window) {
-            window.parent.postMessage({type: 'quiz-completed'}, '*');
+        // Store flag that quiz was submitted (for when user navigates to quizzes page)
+        if (typeof sessionStorage !== 'undefined') {
+            sessionStorage.setItem('quiz-just-submitted', 'true');
         }
+        
+        // Notify parent page to refresh quiz scores (if embedded in iframe)
+        if (window.parent && window.parent !== window) {
+            setTimeout(() => {
+                window.parent.postMessage({type: 'quiz-completed'}, '*');
+            }, 500);
+        }
+        
+        // Results stay inline - no auto-redirect
+        // User can click "View All Quizzes" to see updated scores on quizzes page
     })
     .catch(error => {
         console.error('Error submitting quiz:', error);
@@ -162,6 +174,16 @@ function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+}
+
+function retakeQuiz(type) {
+    // Check if we're in the quiz list page
+    if (typeof loadQuiz !== 'undefined') {
+        loadQuiz(type);
+    } else {
+        // Otherwise reload the quiz
+        window.location.href = '/api/quiz/' + type;
+    }
 }
 </script>
 
