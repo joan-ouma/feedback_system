@@ -81,8 +81,30 @@ func main() {
 	moodService := service.NewMoodService(moodRepo, quoteRepo, llmClient)
 	quizService := service.NewQuizService(quizRepo, llmClient)
 
-	// Load templates
-	tmpl := template.New("")
+	// Load templates with custom functions
+	tmpl := template.New("").Funcs(template.FuncMap{
+		"split": func(s, sep string) []string {
+			return strings.Split(s, sep)
+		},
+		"trim": func(s string) string {
+			return strings.TrimSpace(s)
+		},
+		"replace": func(s, old, new string) string {
+			return strings.ReplaceAll(s, old, new)
+		},
+		"add": func(a, b int) int {
+			return a + b
+		},
+		"le": func(a, b int) bool {
+			return a <= b
+		},
+		"gt": func(a, b int) bool {
+			return a > b
+		},
+		"len": func(s string) int {
+			return len(s)
+		},
+	})
 	templatePattern := "templates/*.html"
 	templates, err := tmpl.ParseGlob(templatePattern)
 	if err != nil {

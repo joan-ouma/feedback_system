@@ -159,13 +159,14 @@ Result: %s
 Answers:
 %s
 
-Provide 3-5 actionable recommendations that are:
+Provide 2-3 concise recommendations (1-2 sentences each) that are:
 - Specific and practical
 - Appropriate for the score level
 - Focused on mental health and wellness
 - Encouraging and supportive
+- Brief and actionable
 
-Format as a numbered list.`, response.Score, response.Result, answersStr)
+Format as a numbered list with short, clear sentences.`, response.Score, response.Result, answersStr)
 
 	messages := []llm.Message{
 		{Role: "user", Content: prompt},
@@ -177,5 +178,40 @@ Format as a numbered list.`, response.Score, response.Result, answersStr)
 	}
 
 	return recText, nil
+}
+
+// GetUserQuizHistory gets all quiz responses for a user with their recommendations
+func (s *QuizService) GetUserQuizHistory(ctx context.Context, userID primitive.ObjectID) (map[string]*QuizHistoryItem, error) {
+	ctx, span := quizServiceTracer.Start(ctx, "QuizService.GetUserQuizHistory")
+	defer span.End()
+
+	responses, err := s.quizRepo.GetUserQuizResponses(ctx, userID)
+	if err != nil {
+		span.RecordError(err)
+		return nil, err
+	}
+
+	result := make(map[string]*QuizHistoryItem)
+	for quizType, response := range responses {
+		item := &QuizHistoryItem{
+			Response: response,
+		}
+		
+		// Get recommendation if available
+		rec, err := s.quizRepo.GetQuizRecommendation(ctx, response.ID)
+		if err == nil && rec != nil {
+			item.Recommendation = rec
+		}
+		
+		result[quizType] = item
+	}
+
+	return result, nil
+}
+
+// QuizHistoryItem represents a quiz response with its recommendation
+type QuizHistoryItem struct {
+	Response      *models.QuizResponse
+	Recommendation *models.QuizRecommendation
 }
 

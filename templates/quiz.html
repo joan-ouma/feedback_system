@@ -75,42 +75,76 @@ function submitQuiz(e) {
         console.log('Quiz response data:', data);
         
         let html = `
-            <div class="quiz-results-container">
-                <h2>Quiz Results</h2>
-                <div class="quiz-result">
+            <div class="quiz-results-container" style="padding: 20px;">
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <h2 style="color: #007bff; margin-bottom: 10px;">✅ Quiz Completed!</h2>
+                </div>
+                <div class="quiz-result" style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
         `;
         
         if (data.response) {
+            const score = data.response.score || 0;
+            const result = data.response.result || 'No result available';
+            
+            // Score badge with color coding
+            let scoreColor = '#28a745'; // green
+            if (score <= 4) scoreColor = '#dc3545'; // red
+            else if (score <= 6) scoreColor = '#ffc107'; // yellow
+            
             html += `
-                <p><strong>Score:</strong> ${data.response.score || 'N/A'}</p>
-                <p><strong>Result:</strong> ${data.response.result || 'No result available'}</p>
+                <div style="text-align: center; margin-bottom: 15px;">
+                    <div style="display: inline-block; background: ${scoreColor}; color: white; padding: 10px 20px; border-radius: 20px; font-size: 24px; font-weight: bold;">
+                        Score: ${score}/10
+                    </div>
+                </div>
+                <p style="text-align: center; font-size: 18px; color: #495057; margin: 10px 0;"><strong>${escapeHtml(result)}</strong></p>
             `;
         } else {
             html += `<p>Quiz submitted successfully!</p>`;
         }
         
         if (data.recommendation && data.recommendation.recommendations) {
+            // Format recommendations as concise bullet points
+            const recs = data.recommendation.recommendations.split('\n').filter(line => line.trim().length > 0);
             html += `
-                <div class="recommendations-box" style="margin-top: 20px; padding: 15px; background: #f0f8ff; border-left: 4px solid #007bff; border-radius: 4px;">
-                    <h4 style="margin-top: 0;">Personalized Recommendations:</h4>
-                    <div class="recommendations-content" style="white-space: pre-wrap;">${escapeHtml(data.recommendation.recommendations)}</div>
+                <div class="recommendations-box" style="margin-top: 20px; padding: 20px; background: #e7f3ff; border-left: 4px solid #007bff; border-radius: 4px;">
+                    <h4 style="margin-top: 0; color: #007bff; margin-bottom: 15px;">💡 Quick Recommendations:</h4>
+                    <ul style="margin: 0; padding-left: 20px; color: #495057;">
+            `;
+            recs.forEach(rec => {
+                // Clean up numbering and formatting
+                let cleanRec = rec.replace(/^\d+[\.\)]\s*/, '').trim();
+                if (cleanRec.length > 0) {
+                    html += `<li style="margin-bottom: 8px; line-height: 1.5;">${escapeHtml(cleanRec)}</li>`;
+                }
+            });
+            html += `
+                    </ul>
                 </div>
             `;
         } else {
             html += `
                 <div class="recommendations-box" style="margin-top: 20px; padding: 15px; background: #fff3cd; border-left: 4px solid #ffc107; border-radius: 4px;">
-                    <p style="margin: 0; color: #856404;">Recommendations are being generated. Please check back later or refresh the page.</p>
+                    <p style="margin: 0; color: #856404;">⏳ Recommendations are being generated. Please refresh the quizzes page to see them.</p>
                 </div>
             `;
         }
         
         html += `
                 </div>
-                <a href="/quizzes" class="btn-primary" style="margin-top: 20px; display: inline-block;">Take Another Quiz</a>
+                <div style="text-align: center;">
+                    <button onclick="location.reload()" class="btn-primary" style="margin-right: 10px;">Take Another Quiz</button>
+                    <button onclick="window.location.href='/quizzes'" class="btn-secondary">View All Quizzes</button>
+                </div>
             </div>
         `;
         
         content.innerHTML = html;
+        
+        // Notify parent page to refresh quiz scores (if embedded)
+        if (window.parent && window.parent !== window) {
+            window.parent.postMessage({type: 'quiz-completed'}, '*');
+        }
     })
     .catch(error => {
         console.error('Error submitting quiz:', error);

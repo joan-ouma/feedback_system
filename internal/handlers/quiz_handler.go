@@ -157,13 +157,36 @@ func (h *QuizHandler) SubmitQuiz(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// QuizList renders the quiz selection page
+// QuizList renders the quiz selection page with user's quiz history
 func (h *QuizHandler) QuizList(w http.ResponseWriter, r *http.Request) {
+	token := middleware.GetTokenFromContext(r.Context())
+	if token == "" {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	user, err := h.authService.Authenticate(r.Context(), token)
+	if err != nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	// Get user's quiz history
+	history, err := h.quizService.GetUserQuizHistory(r.Context(), user.ID)
+	if err != nil {
+		log.Printf("⚠️  Error fetching quiz history: %v", err)
+		history = make(map[string]*service.QuizHistoryItem)
+	}
+
 	w.Header().Set("Content-Type", "text/html")
 	if h.templates != nil {
-		if err := h.templates.ExecuteTemplate(w, "quiz_list.html", nil); err == nil {
+		data := map[string]interface{}{
+			"QuizHistory": history,
+		}
+		if err := h.templates.ExecuteTemplate(w, "quiz_list.html", data); err == nil {
 			return
 		}
+		log.Printf("❌ Template error: %v", err)
 	}
 	http.ServeFile(w, r, "templates/quiz_list.html")
 }
