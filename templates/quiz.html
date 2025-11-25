@@ -33,364 +33,17 @@
 </div>
 
 <script>
+// Simple quiz submission - no IIFE to avoid redeclaration issues
 (function() {
     'use strict';
     
-    // Capture all console errors and display them
-    const originalError = console.error;
-    const errorLog = [];
-    console.error = function(...args) {
-        errorLog.push(args.join(' '));
-        originalError.apply(console, args);
-        // Store errors in a visible place
-        if (typeof window !== 'undefined') {
-            window.lastError = args.join(' ');
-            window.allErrors = errorLog;
-        }
-    };
-    
-    // Prevent any page refresh during quiz submission
-    let preventRefresh = false;
-    window.addEventListener('beforeunload', function(e) {
-        if (preventRefresh) {
-            e.preventDefault();
-            e.returnValue = 'Quiz submission in progress. Are you sure you want to leave?';
-            return e.returnValue;
-        }
-    });
-    
-    // Define submitQuiz function first, then attach listener
-    window.submitQuiz = function(e) {
-        try {
-            // Prevent all default behaviors
-            if (e) {
-                e.preventDefault();
-                e.stopPropagation();
-                e.stopImmediatePropagation();
-            }
-            
-            // Also prevent form submission programmatically
-            const form = e ? e.target : document.getElementById('quiz-form');
-            if (form) {
-                form.addEventListener('submit', function(ev) {
-                    ev.preventDefault();
-                    ev.stopPropagation();
-                    return false;
-                }, { capture: true, once: true });
-            }
-            
-            preventRefresh = true;
-            window.quizSubmitting = true;
-            
-            const form = e.target;
-            const formData = new FormData(form);
-            const quizId = document.getElementById('quiz-id-input')?.value || formData.get('quiz_id');
-            const quizType = document.getElementById('quiz-type-input')?.value || '';
-            
-            if (!quizId) {
-                throw new Error('Quiz ID not found');
-            }
-            
-            const answers = {};
-            for (let [key, value] of formData.entries()) {
-                if (key !== 'quiz_id' && key !== 'quiz_type') {
-                    answers[key] = value;
-                }
-            }
-            
-            // ALWAYS update quiz-content div - this is where the quiz is displayed
-            const content = document.getElementById('quiz-content');
-            if (!content) {
-                throw new Error('quiz-content div not found! Current page structure: ' + document.body.innerHTML.substring(0, 200));
-            }
-    
-    // Store original content in case we need to restore
-    const originalContent = content.innerHTML;
-    content.innerHTML = '<div class="loading">Submitting quiz...</div>';
-    
-    // Disable submit button to prevent double submission
-    const submitBtn = form.querySelector('button[type="submit"]');
-    const originalBtnText = submitBtn ? submitBtn.textContent : '';
-    if (submitBtn) {
-        submitBtn.disabled = true;
-        submitBtn.textContent = 'Submitting...';
+    // Check if already initialized to avoid redeclaration
+    if (window.quizFormInitialized) {
+        return;
     }
+    window.quizFormInitialized = true;
     
-            fetch('/api/quiz/submit', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'HX-Request': 'true'
-                },
-                credentials: 'include',
-                body: JSON.stringify({
-                    quiz_id: quizId,
-                    answers: answers
-                })
-            })
-            .then(response => {
-                if (!response.ok) {
-                    return response.json().then(err => {
-                        console.error('Server error:', err);
-                        throw new Error(err.error || 'Server error: ' + response.status);
-                    });
-                }
-                return response.json();
-            })
-            .then(data => {
-                console.log('Quiz response data:', data);
-                preventRefresh = false;
-                window.quizSubmitting = false;
-        
-        let html = `
-            <div class="quiz-results-container" style="padding: 20px;">
-                <div style="text-align: center; margin-bottom: 20px;">
-                    <h2 style="color: #007bff; margin-bottom: 10px;">✅ Quiz Completed!</h2>
-                </div>
-                <div class="quiz-result" style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-        `;
-        
-        if (data.response) {
-            const score = data.response.score || 0;
-            const result = data.response.result || 'No result available';
-            
-            // Score badge with color coding
-            let scoreColor = '#28a745'; // green
-            if (score <= 4) scoreColor = '#dc3545'; // red
-            else if (score <= 6) scoreColor = '#ffc107'; // yellow
-            
-            html += `
-                <div style="text-align: center; margin-bottom: 15px;">
-                    <div style="display: inline-block; background: ${scoreColor}; color: white; padding: 10px 20px; border-radius: 20px; font-size: 24px; font-weight: bold;">
-                        Score: ${score}/10
-                    </div>
-                </div>
-                <p style="text-align: center; font-size: 18px; color: #495057; margin: 10px 0;"><strong>${escapeHtml(result)}</strong></p>
-            `;
-        } else {
-            html += `<p>Quiz submitted successfully!</p>`;
-        }
-        
-        if (data.recommendation && data.recommendation.recommendations) {
-            // Format recommendations as clean, professional text
-            let recText = data.recommendation.recommendations;
-            
-            // Aggressively remove ALL markdown formatting
-            recText = recText.replace(/\*\*/g, ''); // Remove **
-            recText = recText.replace(/\*/g, ''); // Remove single *
-            recText = recText.replace(/#{1,6}\s/g, ''); // Remove markdown headers
-            recText = recText.replace(/\[([^\]]+)\]\([^\)]+\)/g, '$1'); // Remove markdown links
-            recText = recText.replace(/_{1,2}/g, ''); // Remove underscores
-            recText = recText.replace(/`/g, ''); // Remove backticks
-            recText = recText.replace(/~~/g, ''); // Remove strikethrough
-            
-            // Split into lines and clean up
-            const recs = recText.split('\n')
-                .map(line => line.trim())
-                .filter(line => {
-                    // Remove empty lines, single dashes/asterisks, and lines that are just punctuation
-                    return line.length > 0 && 
-                           !line.match(/^[-*•]\s*$/) && 
-                           !line.match(/^[\s\-*•]+$/) &&
-                           !line.match(/^Remember,|^The most important/); // Remove closing statements
-                });
-            
-            html += `
-                <div class="recommendations-box" style="margin-top: 20px; padding: 24px; background: linear-gradient(135deg, #e7f3ff 0%, #f0f8ff 100%); border-left: 5px solid #007bff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,123,255,0.1);">
-                    <h4 style="margin: 0 0 20px 0; color: #007bff; font-size: 18px; font-weight: 600;">💡 Personalized Recommendations</h4>
-                    <div style="color: #495057; line-height: 1.8; font-size: 15px;">
-            `;
-            
-            // Display as clean numbered list (expecting 2 recommendations)
-            let recIndex = 0;
-            recs.forEach((rec) => {
-                // Check if it's a numbered list item
-                const numberedMatch = rec.match(/^\d+[\.\)]\s*(.+)$/);
-                if (numberedMatch) {
-                    recIndex++;
-                    const cleanRec = numberedMatch[1].trim();
-                    // Split into sentences and format as 2-line recommendation
-                    const sentences = cleanRec.split(/[.!?]+/).filter(s => s.trim().length > 0);
-                    if (sentences.length >= 2) {
-                        // Take first 2 sentences
-                        const firstSentence = sentences[0].trim() + '.';
-                        const secondSentence = sentences[1].trim() + '.';
-                        html += `
-                            <div style="margin-bottom: 20px; padding: 15px; background: rgba(255,255,255,0.5); border-radius: 6px;">
-                                <div style="display: flex; align-items: flex-start; gap: 12px;">
-                                    <span style="color: #007bff; font-weight: 700; font-size: 20px; line-height: 1;">${recIndex}.</span>
-                                    <div style="flex: 1;">
-                                        <div style="margin-bottom: 8px; color: #212529; font-weight: 500;">${escapeHtml(firstSentence)}</div>
-                                        <div style="color: #495057;">${escapeHtml(secondSentence)}</div>
-                                    </div>
-                                </div>
-                            </div>
-                        `;
-                    } else {
-                        // Fallback: just display the text
-                        html += `
-                            <div style="margin-bottom: 20px; padding: 15px; background: rgba(255,255,255,0.5); border-radius: 6px;">
-                                <div style="display: flex; align-items: flex-start; gap: 12px;">
-                                    <span style="color: #007bff; font-weight: 700; font-size: 20px; line-height: 1;">${recIndex + 1}.</span>
-                                    <div style="flex: 1; color: #495057;">${escapeHtml(cleanRec)}</div>
-                                </div>
-                            </div>
-                        `;
-                    }
-                } else if (rec.length > 20 && !rec.match(/^(Remember|The most important|These are just)/i)) {
-                    // If it's a substantial line but not numbered, treat as a recommendation
-                    recIndex++;
-                    const sentences = rec.split(/[.!?]+/).filter(s => s.trim().length > 0);
-                    if (sentences.length >= 2) {
-                        const firstSentence = sentences[0].trim() + '.';
-                        const secondSentence = sentences[1].trim() + '.';
-                        html += `
-                            <div style="margin-bottom: 20px; padding: 15px; background: rgba(255,255,255,0.5); border-radius: 6px;">
-                                <div style="display: flex; align-items: flex-start; gap: 12px;">
-                                    <span style="color: #007bff; font-weight: 700; font-size: 20px; line-height: 1;">${recIndex}.</span>
-                                    <div style="flex: 1;">
-                                        <div style="margin-bottom: 8px; color: #212529; font-weight: 500;">${escapeHtml(firstSentence)}</div>
-                                        <div style="color: #495057;">${escapeHtml(secondSentence)}</div>
-                                    </div>
-                                </div>
-                            </div>
-                        `;
-                    }
-                }
-            });
-            
-            html += `
-                    </div>
-                </div>
-            `;
-        } else {
-            html += `
-                <div class="recommendations-box" style="margin-top: 20px; padding: 15px; background: #fff3cd; border-left: 4px solid #ffc107; border-radius: 4px;">
-                    <p style="margin: 0; color: #856404;">⏳ Recommendations are being generated. Please refresh the quizzes page to see them.</p>
-                </div>
-            `;
-        }
-        
-        html += `
-                </div>
-                <div style="text-align: center;">
-                    <button onclick="retakeQuiz('${quizType}')" class="btn-primary" style="margin-right: 10px;">Retake Quiz</button>
-                    <button onclick="window.location.href='/quizzes'" class="btn-secondary">View All Quizzes</button>
-                </div>
-            </div>
-        `;
-        
-                // Update the quiz-content div with results - NO PAGE RELOAD
-                content.innerHTML = html;
-                
-                // Re-enable submit button (if it still exists in DOM)
-                const btn = form.querySelector('button[type="submit"]');
-                if (btn) {
-                    btn.disabled = false;
-                }
-                
-                // Store flag that quiz was submitted (for when user manually navigates to quizzes page)
-                if (typeof sessionStorage !== 'undefined') {
-                    sessionStorage.setItem('quiz-just-submitted', 'true');
-                }
-                
-                // DO NOT reload page - results stay inline
-                // User can manually click "View All Quizzes" if they want to see updated scores
-                
-                return false; // Prevent any form submission
-            })
-            .catch(error => {
-                preventRefresh = false;
-                window.quizSubmitting = false;
-                
-                // Capture full error details
-                const errorDetails = {
-                    message: error.message || 'Unknown error',
-                    stack: error.stack || 'No stack trace',
-                    error: error.error || null,
-                    name: error.name || 'Error',
-                    allErrors: window.allErrors || []
-                };
-                
-                console.error('=== QUIZ SUBMISSION ERROR ===');
-                console.error('Error:', error);
-                console.error('Error details:', errorDetails);
-                console.error('All console errors:', window.allErrors);
-                console.error('============================');
-                
-                // Display error persistently with full details
-                let errorMsg = error.error || error.message || 'Failed to submit quiz. Please try again.';
-                const errorHtml = `
-                    <div class="error" style="padding: 20px; background: #f8d7da; color: #721c24; border-radius: 8px; border: 2px solid #dc3545; max-width: 100%;">
-                        <h3 style="margin-top: 0; color: #721c24;">❌ Error Submitting Quiz</h3>
-                        <p style="margin: 10px 0;"><strong>${escapeHtml(errorMsg)}</strong></p>
-                        <details style="margin-top: 15px;">
-                            <summary style="cursor: pointer; font-weight: bold; margin-bottom: 10px;">Error Details (Click to expand)</summary>
-                            <pre style="background: rgba(0,0,0,0.1); padding: 10px; border-radius: 4px; overflow-x: auto; font-size: 11px; max-height: 200px; overflow-y: auto;">${escapeHtml(JSON.stringify(errorDetails, null, 2))}</pre>
-                        </details>
-                        <p style="margin: 10px 0; font-size: 12px; opacity: 0.8;">
-                            <strong>To help debug:</strong><br>
-                            1. Press F12 to open browser console<br>
-                            2. Look for errors marked with "=== QUIZ SUBMISSION ERROR ==="<br>
-                            3. Copy the error details and report them
-                        </p>
-                        <div style="margin-top: 15px;">
-                            <button onclick="location.reload()" class="btn-primary" style="margin-right: 10px;">Reload Page</button>
-                            <button onclick="document.getElementById('quiz-content').innerHTML = document.getElementById('quiz-content').dataset.originalContent || 'Quiz form will reload...'; setTimeout(() => location.reload(), 500);" class="btn-secondary">Try Again</button>
-                        </div>
-                    </div>
-                `;
-                
-                // Store original content before showing error
-                if (content) {
-                    content.dataset.originalContent = originalContent;
-                    content.innerHTML = errorHtml;
-                }
-                
-                // Re-enable submit button on error
-                const btn = form.querySelector('button[type="submit"]');
-                if (btn) {
-                    btn.disabled = false;
-                    btn.textContent = originalBtnText || 'Submit Quiz';
-                }
-                
-                return false; // Prevent any form submission
-            });
-            
-            return false; // Prevent form submission
-        } catch (error) {
-            preventRefresh = false;
-            window.quizSubmitting = false;
-            
-            const errorDetails = {
-                message: error.message || 'Unknown fatal error',
-                stack: error.stack || 'No stack trace',
-                name: error.name || 'Error'
-            };
-            
-            console.error('=== FATAL ERROR IN submitQuiz ===');
-            console.error('Error:', error);
-            console.error('Error details:', errorDetails);
-            console.error('================================');
-            
-            // Show error in a way that won't disappear
-            const content = document.getElementById('quiz-content');
-            if (content) {
-                content.innerHTML = `
-                    <div class="error" style="padding: 20px; background: #f8d7da; color: #721c24; border-radius: 8px; border: 2px solid #dc3545;">
-                        <h3 style="margin-top: 0;">❌ Fatal Error</h3>
-                        <p><strong>${escapeHtml(error.message || 'An unexpected error occurred')}</strong></p>
-                        <p style="font-size: 12px;">Check browser console (F12) for full details.</p>
-                        <button onclick="location.reload()" class="btn-primary" style="margin-top: 10px;">Reload Page</button>
-                    </div>
-                `;
-            }
-            
-            alert('Fatal error: ' + error.message + '\n\nFull error logged to console. Press F12 to view.');
-            return false;
-        }
-    };
-    
+    // Helper function to escape HTML
     window.escapeHtml = function(text) {
         if (!text) return '';
         const div = document.createElement('div');
@@ -398,45 +51,201 @@
         return div.innerHTML;
     };
     
-    window.retakeQuiz = function(type) {
-        try {
-            // Check if we're in the quiz list page
-            if (typeof loadQuiz !== 'undefined') {
-                loadQuiz(type);
-            } else {
-                // Otherwise reload the quiz
-                window.location.href = '/api/quiz/' + type;
+    // Submit quiz function
+    window.submitQuiz = function(e) {
+        if (e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+        
+        const quizForm = document.getElementById('quiz-form');
+        if (!quizForm) {
+            console.error('Quiz form not found');
+            return false;
+        }
+        
+        const formData = new FormData(quizForm);
+        const quizId = document.getElementById('quiz-id-input')?.value || formData.get('quiz_id');
+        const quizType = document.getElementById('quiz-type-input')?.value || '';
+        
+        if (!quizId) {
+            alert('Quiz ID not found. Please refresh and try again.');
+            return false;
+        }
+        
+        const answers = {};
+        for (let [key, value] of formData.entries()) {
+            if (key !== 'quiz_id' && key !== 'quiz_type') {
+                answers[key] = value;
             }
-        } catch (error) {
-            console.error('Error in retakeQuiz:', error);
-            alert('Error loading quiz. Please try again.');
+        }
+        
+        const content = document.getElementById('quiz-content');
+        if (!content) {
+            alert('Quiz container not found. Please refresh the page.');
+            return false;
+        }
+        
+        // Show loading
+        content.innerHTML = '<div class="loading" style="padding: 20px; text-align: center;">Submitting quiz...</div>';
+        
+        // Disable submit button
+        const submitBtn = quizForm.querySelector('button[type="submit"]');
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Submitting...';
+        }
+        
+        // Submit quiz
+        fetch('/api/quiz/submit', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'HX-Request': 'true'
+            },
+            credentials: 'include',
+            body: JSON.stringify({
+                quiz_id: quizId,
+                answers: answers
+            })
+        })
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(err => {
+                    throw new Error(err.error || 'Server error: ' + response.status);
+                });
+            }
+            return response.json();
+        })
+        .then(data => {
+            // Build results HTML
+            let html = '<div class="quiz-results-container" style="padding: 20px;">';
+            html += '<div style="text-align: center; margin-bottom: 20px;">';
+            html += '<h2 style="color: #007bff; margin-bottom: 10px;">✅ Quiz Completed!</h2>';
+            html += '</div>';
+            html += '<div class="quiz-result" style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">';
+            
+            // Show score
+            if (data.response) {
+                const score = data.response.score || 0;
+                const result = data.response.result || 'No result available';
+                
+                let scoreColor = '#28a745'; // green
+                if (score <= 4) scoreColor = '#dc3545'; // red
+                else if (score <= 6) scoreColor = '#ffc107'; // yellow
+                
+                html += '<div style="text-align: center; margin-bottom: 15px;">';
+                html += '<div style="display: inline-block; background: ' + scoreColor + '; color: white; padding: 10px 20px; border-radius: 20px; font-size: 24px; font-weight: bold;">';
+                html += 'Score: ' + score + '/10';
+                html += '</div>';
+                html += '</div>';
+                html += '<p style="text-align: center; font-size: 18px; color: #495057; margin: 10px 0;"><strong>' + window.escapeHtml(result) + '</strong></p>';
+            }
+            
+            // Show recommendations
+            if (data.recommendation && data.recommendation.recommendations) {
+                let recText = data.recommendation.recommendations;
+                
+                // Remove markdown formatting
+                recText = recText.replace(/\*\*/g, '');
+                recText = recText.replace(/\*/g, '');
+                recText = recText.replace(/#{1,6}\s/g, '');
+                recText = recText.replace(/\[([^\]]+)\]\([^\)]+\)/g, '$1');
+                recText = recText.replace(/_{1,2}/g, '');
+                recText = recText.replace(/`/g, '');
+                recText = recText.replace(/~~/g, '');
+                
+                // Split into lines
+                const recs = recText.split('\n')
+                    .map(line => line.trim())
+                    .filter(line => line.length > 0 && !line.match(/^[-*•]\s*$/) && !line.match(/^[\s\-*•]+$/));
+                
+                html += '<div class="recommendations-box" style="margin-top: 20px; padding: 24px; background: linear-gradient(135deg, #e7f3ff 0%, #f0f8ff 100%); border-left: 5px solid #007bff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,123,255,0.1);">';
+                html += '<h4 style="margin: 0 0 20px 0; color: #007bff; font-size: 18px; font-weight: 600;">💡 Personalized Recommendations</h4>';
+                html += '<div style="color: #495057; line-height: 1.8; font-size: 15px;">';
+                
+                let recIndex = 0;
+                recs.forEach((rec) => {
+                    const numberedMatch = rec.match(/^\d+[\.\)]\s*(.+)$/);
+                    if (numberedMatch) {
+                        recIndex++;
+                        const cleanRec = numberedMatch[1].trim();
+                        html += '<div style="margin-bottom: 20px; padding: 15px; background: rgba(255,255,255,0.5); border-radius: 6px;">';
+                        html += '<div style="display: flex; align-items: flex-start; gap: 12px;">';
+                        html += '<span style="color: #007bff; font-weight: 700; font-size: 20px; line-height: 1;">' + recIndex + '.</span>';
+                        html += '<div style="flex: 1; color: #495057;">' + window.escapeHtml(cleanRec) + '</div>';
+                        html += '</div></div>';
+                    } else if (rec.length > 20) {
+                        recIndex++;
+                        html += '<div style="margin-bottom: 20px; padding: 15px; background: rgba(255,255,255,0.5); border-radius: 6px;">';
+                        html += '<div style="display: flex; align-items: flex-start; gap: 12px;">';
+                        html += '<span style="color: #007bff; font-weight: 700; font-size: 20px; line-height: 1;">' + recIndex + '.</span>';
+                        html += '<div style="flex: 1; color: #495057;">' + window.escapeHtml(rec) + '</div>';
+                        html += '</div></div>';
+                    }
+                });
+                
+                html += '</div></div>';
+            }
+            
+            html += '</div>';
+            html += '<div style="text-align: center; margin-top: 20px;">';
+            html += '<button onclick="if(typeof loadQuiz !== \'undefined\') { loadQuiz(\'' + quizType + '\'); } else { location.reload(); }" class="btn-primary" style="margin-right: 10px;">Retake Quiz</button>';
+            html += '<button onclick="window.location.href=\'/quizzes\'" class="btn-secondary">View All Quizzes</button>';
+            html += '</div>';
+            html += '</div>';
+            
+            content.innerHTML = html;
+            
+            if (submitBtn) {
+                submitBtn.disabled = false;
+            }
+        })
+        .catch(error => {
+            console.error('Quiz submission error:', error);
+            content.innerHTML = '<div class="error" style="padding: 20px; background: #f8d7da; color: #721c24; border-radius: 8px; border: 2px solid #dc3545;">' +
+                '<h3 style="margin-top: 0;">❌ Error Submitting Quiz</h3>' +
+                '<p><strong>' + window.escapeHtml(error.message || 'Failed to submit quiz. Please try again.') + '</strong></p>' +
+                '<button onclick="location.reload()" class="btn-primary" style="margin-top: 10px;">Reload Page</button>' +
+                '</div>';
+            
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Submit Quiz';
+            }
+        });
+        
+        return false;
+    };
+    
+    // Retake quiz function
+    window.retakeQuiz = function(type) {
+        if (typeof loadQuiz !== 'undefined') {
+            loadQuiz(type);
+        } else {
+            window.location.href = '/api/quiz/' + type;
         }
     };
     
-    // Attach event listener to form after functions are defined
-    function attachQuizFormListener() {
+    // Attach form listener
+    function attachFormListener() {
         const form = document.getElementById('quiz-form');
         if (form && !form.dataset.listenerAttached) {
             form.addEventListener('submit', function(e) {
                 e.preventDefault();
                 e.stopPropagation();
-                e.stopImmediatePropagation();
                 if (typeof window.submitQuiz === 'function') {
                     return window.submitQuiz(e);
-                } else {
-                    console.error('submitQuiz function not available');
-                    return false;
                 }
+                return false;
             }, { capture: true });
             form.dataset.listenerAttached = 'true';
         }
     }
     
-    // Try to attach immediately, and retry if form not ready
-    attachQuizFormListener();
-    setTimeout(attachQuizFormListener, 100);
-    setTimeout(attachQuizFormListener, 500);
+    // Try to attach listener
+    attachFormListener();
+    setTimeout(attachFormListener, 100);
+    setTimeout(attachFormListener, 500);
 })();
-
 </script>
-

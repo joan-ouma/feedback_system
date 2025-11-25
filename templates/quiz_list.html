@@ -282,22 +282,20 @@
             .then(html => {
                 if (html) {
                     content.innerHTML = html;
-                    // Execute any script tags in the loaded HTML
-                    // Scripts don't execute automatically when inserted via innerHTML
+                    // Execute scripts only once - use eval to avoid redeclaration issues
                     const scripts = content.querySelectorAll('script');
                     scripts.forEach(oldScript => {
-                        // Create new script element
-                        const newScript = document.createElement('script');
-                        // Copy all attributes
-                        Array.from(oldScript.attributes).forEach(attr => {
-                            newScript.setAttribute(attr.name, attr.value);
-                        });
-                        // Copy text content
-                        newScript.textContent = oldScript.textContent;
-                        // Remove old script
-                        oldScript.parentNode.removeChild(oldScript);
-                        // Append new script to head to ensure it executes
-                        document.head.appendChild(newScript);
+                        try {
+                            // Use Function constructor to avoid variable redeclaration
+                            if (oldScript.textContent) {
+                                const scriptFunc = new Function(oldScript.textContent);
+                                scriptFunc();
+                            }
+                            // Remove the script tag after execution
+                            oldScript.parentNode.removeChild(oldScript);
+                        } catch (e) {
+                            console.error('Error executing script:', e);
+                        }
                     });
                 }
             })
