@@ -4,6 +4,41 @@
     box-sizing: border-box;
 }
 
+/* Utility classes for mobile */
+.mobile-only {
+    display: none;
+}
+
+.desktop-only {
+    display: block;
+}
+
+@media (max-width: 575.98px) {
+    .mobile-only {
+        display: block;
+    }
+    
+    .desktop-only {
+        display: none;
+    }
+    
+    .mobile-full-width {
+        width: 100% !important;
+    }
+    
+    .mobile-text-center {
+        text-align: center !important;
+    }
+    
+    .mobile-padding {
+        padding: 1rem !important;
+    }
+    
+    .mobile-margin-bottom {
+        margin-bottom: 1rem !important;
+    }
+}
+
 body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
     line-height: 1.6;
@@ -505,15 +540,44 @@ input[type="range"] {
     border-radius: 5px;
     background: #ddd;
     outline: none;
+    -webkit-appearance: none;
+    appearance: none;
 }
 
 input[type="range"]::-webkit-slider-thumb {
     appearance: none;
+    -webkit-appearance: none;
     width: 20px;
     height: 20px;
     border-radius: 50%;
     background: #007bff;
     cursor: pointer;
+}
+
+input[type="range"]::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #007bff;
+    cursor: pointer;
+    border: none;
+}
+
+/* Mobile-friendly range input */
+@media (max-width: 575.98px) {
+    input[type="range"] {
+        height: 10px;
+    }
+    
+    input[type="range"]::-webkit-slider-thumb {
+        width: 24px;
+        height: 24px;
+    }
+    
+    input[type="range"]::-moz-range-thumb {
+        width: 24px;
+        height: 24px;
+    }
 }
 
 .recommendations-box {
@@ -720,29 +784,521 @@ input[type="range"]::-webkit-slider-thumb {
     60%, 100% { content: '...'; }
 }
 
-/* Responsive */
-@media (max-width: 768px) {
+/* ============================================
+   MOBILE RESPONSIVE STYLES
+   ============================================ */
+
+/* Base mobile styles - apply to all screen sizes */
+.container {
+    padding: 15px;
+}
+
+/* Small devices (phones, 576px and up) */
+@media (max-width: 575.98px) {
+    .container {
+        padding: 10px;
+    }
+    
+    /* Typography */
+    h1 {
+        font-size: 1.75rem;
+    }
+    
+    h2 {
+        font-size: 1.5rem;
+    }
+    
+    h3 {
+        font-size: 1.25rem;
+    }
+    
+    /* Navbar */
+    .navbar {
+        padding: 0.75rem 0;
+    }
+    
     .navbar .container {
-        flex-direction: column;
-        gap: 1rem;
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0 15px;
+    }
+    
+    .logo {
+        font-size: 1.25rem;
     }
     
     .nav-links {
-        flex-direction: column;
-        width: 100%;
+        display: flex;
+        flex-direction: row;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+    
+    .nav-links a {
+        padding: 0.4rem 0.75rem;
+        font-size: 0.9rem;
+    }
+    
+    .nav-links .btn-secondary {
+        padding: 0.4rem 0.75rem;
+        font-size: 0.9rem;
+    }
+    
+    /* Cards */
+    .card {
+        padding: 1.25rem;
+    }
+    
+    .card h2 {
+        font-size: 1.25rem;
+        margin-bottom: 1rem;
+    }
+    
+    /* Dashboard */
+    .dashboard-header {
+        margin-bottom: 1.5rem;
+    }
+    
+    .dashboard-header h1 {
+        font-size: 1.75rem;
     }
     
     .dashboard-grid {
         grid-template-columns: 1fr;
+        gap: 1.5rem;
     }
-
+    
+    /* Forms */
+    .form-group {
+        margin-bottom: 1.25rem;
+    }
+    
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+        padding: 0.65rem;
+        font-size: 16px; /* Prevents zoom on iOS */
+    }
+    
+    /* Buttons */
+    .btn-primary,
+    .btn-secondary {
+        padding: 0.65rem 1.25rem;
+        font-size: 1rem;
+    }
+    
+    .action-buttons {
+        flex-direction: column;
+    }
+    
+    .action-buttons .btn-primary {
+        width: 100%;
+    }
+    
+    /* Auth pages */
+    .auth-container {
+        padding: 1rem;
+        min-height: calc(100vh - 150px);
+    }
+    
+    .auth-card {
+        padding: 1.5rem;
+    }
+    
+    /* Token display */
+    .token-box {
+        padding: 1rem;
+    }
+    
+    .token-input-group {
+        flex-direction: column;
+    }
+    
+    .token-input {
+        margin-bottom: 0.75rem;
+    }
+    
+    .btn-copy {
+        width: 100%;
+    }
+    
+    .token-actions {
+        flex-direction: column;
+    }
+    
+    .token-actions .btn-primary,
+    .token-actions .btn-secondary {
+        width: 100%;
+        min-width: auto;
+    }
+    
+    /* Quiz styles */
     .quiz-grid {
         grid-template-columns: 1fr;
+        gap: 1rem;
     }
-
+    
+    .quiz-card {
+        padding: 1.25rem;
+    }
+    
+    .quiz-form {
+        padding: 0;
+    }
+    
+    .quiz-question {
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .question-label {
+        font-size: 1rem;
+        margin-bottom: 0.75rem;
+    }
+    
+    .radio-option {
+        margin: 0.5rem 0;
+    }
+    
+    .scale-input {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.5rem;
+    }
+    
+    .scale-input input[type="range"] {
+        width: 100%;
+    }
+    
+    .quiz-results-container {
+        padding: 1.25rem;
+    }
+    
+    .quiz-results-container h2 {
+        font-size: 1.5rem;
+    }
+    
+    /* Mood tracking */
+    .quote-card {
+        padding: 1.25rem;
+    }
+    
+    .quote-text {
+        font-size: 1.25rem;
+    }
+    
+    .score-display {
+        font-size: 1.25rem;
+    }
+    
+    .recommendations-box {
+        padding: 1rem;
+    }
+    
+    .recommendations-box h4 {
+        font-size: 1rem;
+    }
+    
+    .mood-entry-card {
+        padding: 0.75rem;
+    }
+    
     .mood-entry-header {
         flex-direction: column;
         align-items: flex-start;
+        gap: 0.5rem;
+    }
+    
+    /* Feedback cards */
+    .feedback-card {
+        padding: 1rem;
+    }
+    
+    .feedback-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+    
+    .feedback-title {
+        font-size: 1.1rem;
+    }
+    
+    /* Consultation chat */
+    .chat-container {
+        height: calc(100vh - 180px);
+        padding: 0;
+    }
+    
+    .chat-messages {
+        padding: 15px;
+    }
+    
+    .message {
+        max-width: 85%;
+        font-size: 0.9rem;
+        padding: 10px 14px;
+    }
+    
+    .chat-input-container {
+        flex-direction: column;
+    }
+    
+    .chat-input {
+        font-size: 16px; /* Prevents zoom on iOS */
+    }
+    
+    .send-btn {
+        width: 100%;
+        padding: 12px;
+    }
+    
+    /* Footer */
+    footer {
+        padding: 1.5rem 0;
+        margin-top: 2rem;
+        font-size: 0.875rem;
+    }
+    
+    /* Empty states */
+    .empty-state {
+        padding: 2rem 1rem;
+    }
+    
+    .empty-state p {
+        font-size: 1rem;
+    }
+}
+
+/* Medium devices (tablets, 768px and up) */
+@media (min-width: 576px) and (max-width: 991.98px) {
+    .container {
+        padding: 15px;
+    }
+    
+    .dashboard-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .quiz-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .nav-links {
+        gap: 0.75rem;
+    }
+    
+    .card {
+        padding: 1.5rem;
+    }
+}
+
+/* Large devices (desktops, 992px and up) */
+@media (min-width: 992px) {
+    .container {
+        padding: 20px;
+    }
+}
+
+/* Extra large devices (large desktops, 1200px and up) */
+@media (min-width: 1200px) {
+    .container {
+        max-width: 1200px;
+    }
+}
+
+/* Landscape orientation on mobile */
+@media (max-width: 767.98px) and (orientation: landscape) {
+    .chat-container {
+        height: calc(100vh - 150px);
+    }
+    
+    .auth-container {
+        min-height: calc(100vh - 120px);
+    }
+}
+
+/* Touch-friendly elements for mobile */
+@media (hover: none) and (pointer: coarse) {
+    /* Increase tap target sizes */
+    .btn-primary,
+    .btn-secondary,
+    .btn-copy {
+        min-height: 44px; /* iOS recommended minimum */
+    }
+    
+    .nav-links a {
+        min-height: 44px;
+        display: flex;
+        align-items: center;
+    }
+    
+    .radio-option label {
+        min-height: 44px;
+        display: flex;
+        align-items: center;
+        padding: 0.5rem 0;
+    }
+    
+    /* Remove hover effects on touch devices */
+    .quiz-card:hover {
+        transform: none;
+    }
+    
+    .feedback-card:hover {
+        box-shadow: none;
+    }
+}
+
+/* Override inline styles for mobile responsiveness */
+@media (max-width: 575.98px) {
+    /* Quiz results summary card */
+    .card[style*="gradient"] {
+        padding: 20px !important;
+        margin-bottom: 20px !important;
+    }
+    
+    .card[style*="gradient"] h2 {
+        font-size: 1.5rem !important;
+        margin-bottom: 15px !important;
+    }
+    
+    .card[style*="gradient"] p {
+        font-size: 0.9rem !important;
+        margin-bottom: 15px !important;
+    }
+    
+    /* Quiz result cards inside summary */
+    .card[style*="gradient"] > div[style*="grid"] {
+        grid-template-columns: 1fr !important;
+        gap: 15px !important;
+    }
+    
+    .card[style*="gradient"] > div[style*="grid"] > div {
+        padding: 15px !important;
+    }
+    
+    .card[style*="gradient"] h4 {
+        font-size: 1rem !important;
+        margin-bottom: 10px !important;
+    }
+    
+    .card[style*="gradient"] div[style*="inline-block"] {
+        padding: 10px 16px !important;
+        font-size: 18px !important;
+    }
+    
+    .card[style*="gradient"] span[style*="font-size: 14px"] {
+        font-size: 0.85rem !important;
+    }
+    
+    .card[style*="gradient"] div[style*="background: rgba"] {
+        padding: 12px !important;
+    }
+    
+    .card[style*="gradient"] h5 {
+        font-size: 0.85rem !important;
+        margin-bottom: 8px !important;
+    }
+    
+    .card[style*="gradient"] div[style*="font-size: 13px"] {
+        font-size: 0.8rem !important;
+        line-height: 1.5 !important;
+    }
+    
+    /* Quiz results container */
+    .quiz-results-container {
+        padding: 15px !important;
+    }
+    
+    .quiz-results-container h2 {
+        font-size: 1.5rem !important;
+        margin-bottom: 15px !important;
+    }
+    
+    .quiz-results-container .quiz-result {
+        padding: 15px !important;
+        margin-bottom: 15px !important;
+    }
+    
+    .quiz-results-container div[style*="inline-block"] {
+        padding: 8px 16px !important;
+        font-size: 20px !important;
+    }
+    
+    .quiz-results-container p[style*="font-size: 18px"] {
+        font-size: 1rem !important;
+    }
+    
+    .quiz-results-container .recommendations-box {
+        padding: 15px !important;
+        margin-top: 15px !important;
+    }
+    
+    .quiz-results-container .recommendations-box h4 {
+        font-size: 1rem !important;
+        margin-bottom: 15px !important;
+    }
+    
+    .quiz-results-container .recommendations-box div[style*="font-size: 15px"] {
+        font-size: 0.9rem !important;
+    }
+    
+    .quiz-results-container div[style*="margin-bottom: 20px"] {
+        margin-bottom: 15px !important;
+        padding: 12px !important;
+    }
+    
+    .quiz-results-container span[style*="font-size: 20px"] {
+        font-size: 18px !important;
+    }
+    
+    .quiz-results-container div[style*="display: flex"] {
+        flex-direction: column !important;
+        gap: 8px !important;
+    }
+    
+    /* Error messages */
+    .error[style*="padding: 20px"] {
+        padding: 15px !important;
+    }
+    
+    .error h3 {
+        font-size: 1.1rem !important;
+    }
+    
+    /* Loading states */
+    .loading[style*="padding: 20px"] {
+        padding: 15px !important;
+    }
+}
+
+/* Tablet adjustments */
+@media (min-width: 576px) and (max-width: 991.98px) {
+    .card[style*="gradient"] > div[style*="grid"] {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+    
+    .card[style*="gradient"] {
+        padding: 25px !important;
+    }
+}
+
+/* Print styles */
+@media print {
+    .navbar,
+    footer,
+    .action-buttons,
+    .btn-primary,
+    .btn-secondary {
+        display: none;
+    }
+    
+    .card {
+        box-shadow: none;
+        border: 1px solid #ddd;
+        page-break-inside: avoid;
     }
 }
 
