@@ -64,9 +64,9 @@ func Load() (*Config, error) {
 			SessionSecret: getEnv("SESSION_SECRET", "change-me-in-production"),
 		},
 		LLM: LLMConfig{
-			APIURL: getEnv("LLM_API_URL", getEnv("GEMINI_API_URL", "https://api.openai.com/v1")), // Support both OpenAI and Gemini
-			APIKey: getEnv("LLM_API_KEY", getEnv("GEMINI_API_KEY", "")), // Support both
-			Model:  getEnv("LLM_MODEL", getEnv("GEMINI_MODEL", "gpt-4")), // Default to gpt-4, but can use gemini-pro
+			APIURL: getEnv("LLM_API_URL", getEnv("GEMINI_API_URL", "https://generativelanguage.googleapis.com/v1beta")), // Default to Gemini API
+			APIKey: getEnv("LLM_API_KEY", getEnv("GEMINI_API_KEY", "")), // Only API key needed
+			Model:  getEnv("LLM_MODEL", getEnv("GEMINI_MODEL", "")), // Model is optional, will use default if empty
 		},
 		OpenTelemetry: OpenTelemetryConfig{
 			JaegerEndpoint: getEnv("JAEGER_ENDPOINT", "http://localhost:14268/api/traces"),

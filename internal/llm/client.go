@@ -99,12 +99,11 @@ func (c *Client) Chat(ctx context.Context, conversationHistory []Message, userMe
 		))
 	defer span.End()
 
-	// Check if using Gemini API (by URL or model name)
-	isGemini := strings.Contains(c.apiURL, "generativelanguage.googleapis.com") || 
-	            strings.HasPrefix(strings.ToLower(c.model), "gemini")
+	// Check if using Gemini API (by URL only - model is optional)
+	isGemini := strings.Contains(c.apiURL, "generativelanguage.googleapis.com")
 	
 	if isGemini {
-		log.Printf("🔵 Detected Gemini API (URL: %s, Model: %s)", c.apiURL, c.model)
+		log.Printf("🔵 Detected Gemini API (URL: %s)", c.apiURL)
 		return c.chatGemini(ctx, conversationHistory, userMessage)
 	}
 	
@@ -284,12 +283,22 @@ func (c *Client) chatGemini(ctx context.Context, conversationHistory []Message, 
 		return "", fmt.Errorf("failed to marshal Gemini request: %w", err)
 	}
 
-	// Gemini model name (default to gemini-pro if not specified)
+	// Gemini model name - use gemini-1.5-flash as default (faster and cheaper)
+	// If model is specified and starts with "gemini", use it; otherwise use default
 	modelName := c.model
-	if modelName == "" || !strings.HasPrefix(modelName, "gemini") {
-		modelName = "gemini-pro"
+	if modelName == "" || !strings.HasPrefix(strings.ToLower(modelName), "gemini") {
+		modelName = "gemini-1.5-flash" // Default to flash for speed and cost
 	}
-	endpoint := fmt.Sprintf("%s/models/%s:generateContent?key=%s", c.apiURL, modelName, c.apiKey)
+	
+	// Ensure API URL ends with /v1beta (Gemini API requirement)
+	apiURL := c.apiURL
+	if !strings.HasSuffix(apiURL, "/v1beta") && !strings.HasSuffix(apiURL, "/v1") {
+		if strings.Contains(apiURL, "generativelanguage.googleapis.com") {
+			apiURL = strings.TrimSuffix(apiURL, "/") + "/v1beta"
+		}
+	}
+	
+	endpoint := fmt.Sprintf("%s/models/%s:generateContent?key=%s", apiURL, modelName, c.apiKey)
 	log.Printf("🔵 Calling Gemini API: %s (model: %s)", endpoint, modelName)
 	log.Printf("🔵 Request body: %s", string(jsonData))
 	
