@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/joan/feedback-sys/internal/llm"
@@ -15,9 +16,9 @@ import (
 var moodServiceTracer = otel.Tracer("service.mood")
 
 type MoodService struct {
-	moodRepo    *repository.MoodRepository
-	quoteRepo   *repository.QuoteRepository
-	llmClient   *llm.Client
+	moodRepo  *repository.MoodRepository
+	quoteRepo *repository.QuoteRepository
+	llmClient *llm.Client
 }
 
 func NewMoodService(moodRepo *repository.MoodRepository, quoteRepo *repository.QuoteRepository, llmClient *llm.Client) *MoodService {
@@ -54,8 +55,8 @@ func (s *MoodService) RecordMood(ctx context.Context, userID primitive.ObjectID,
 		recText, err := s.generateRecommendations(ctx, entry)
 		if err == nil {
 			recommendation = &models.MoodRecommendation{
-				UserID:        userID,
-				MoodEntryID:   entry.ID,
+				UserID:          userID,
+				MoodEntryID:     entry.ID,
 				Recommendations: recText,
 			}
 			if err := s.moodRepo.CreateMoodRecommendation(ctx, recommendation); err != nil {
@@ -91,7 +92,11 @@ Provide practical, empathetic recommendations that are:
 - Focused on self-care and mental health
 - Encouraging but realistic
 
-Format as a numbered list.`, entry.MoodType, entry.MoodLevel, entry.Score, entry.Notes)
+IMPORTANT FORMATTING REQUIREMENTS:
+- Format as a numbered list (1., 2., 3., etc.)
+- NO markdown formatting (no **, no *, no #, no bullets, no bold, no italic)
+- Plain text only
+- Each recommendation should be clear and readable without any markdown syntax`, entry.MoodType, entry.MoodLevel, entry.Score, entry.Notes)
 
 	messages := []llm.Message{
 		{Role: "user", Content: prompt},
@@ -102,7 +107,28 @@ Format as a numbered list.`, entry.MoodType, entry.MoodLevel, entry.Score, entry
 		return "", err
 	}
 
-	return response, nil
+	// Clean markdown formatting from response
+	cleaned := s.cleanMarkdown(response)
+
+	return cleaned, nil
+}
+
+// cleanMarkdown removes markdown formatting from text
+func (s *MoodService) cleanMarkdown(text string) string {
+	// Remove markdown bold (**text**) - must be done first before removing single *
+	text = strings.ReplaceAll(text, "**", "")
+	// Remove markdown italic (*text*) - single asterisks
+	text = strings.ReplaceAll(text, "*", "")
+	// Remove markdown headers (# Header)
+	text = strings.ReplaceAll(text, "#", "")
+	// Remove markdown code backticks
+	text = strings.ReplaceAll(text, "`", "")
+	// Remove markdown strikethrough
+	text = strings.ReplaceAll(text, "~~", "")
+	// Remove markdown underscores (italic/bold)
+	text = strings.ReplaceAll(text, "__", "")
+	text = strings.ReplaceAll(text, "_", "")
+	return strings.TrimSpace(text)
 }
 
 // generateDailyQuote generates a motivational quote based on mood
@@ -219,4 +245,3 @@ func (s *MoodService) GetDailyQuote(ctx context.Context, userID primitive.Object
 
 	return s.quoteRepo.GetQuoteForDate(ctx, userID, time.Now())
 }
-
