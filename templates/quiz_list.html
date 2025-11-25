@@ -282,12 +282,42 @@
             .then(html => {
                 if (html) {
                     content.innerHTML = html;
+                    // Execute any script tags in the loaded HTML
+                    // Scripts don't execute automatically when inserted via innerHTML
+                    const scripts = content.querySelectorAll('script');
+                    scripts.forEach(oldScript => {
+                        // Create new script element
+                        const newScript = document.createElement('script');
+                        // Copy all attributes
+                        Array.from(oldScript.attributes).forEach(attr => {
+                            newScript.setAttribute(attr.name, attr.value);
+                        });
+                        // Copy text content
+                        newScript.textContent = oldScript.textContent;
+                        // Remove old script
+                        oldScript.parentNode.removeChild(oldScript);
+                        // Append new script to head to ensure it executes
+                        document.head.appendChild(newScript);
+                    });
                 }
             })
             .catch(error => {
                 console.error('Error loading quiz:', error);
                 content.innerHTML = '<div class="error">Failed to load quiz. Please try again.</div>';
             });
+        }
+        
+        // Ensure submitQuiz is available globally (fallback)
+        // This will be overridden by the quiz.html script when it loads
+        if (typeof window.submitQuiz === 'undefined') {
+            window.submitQuiz = function(e) {
+                console.error('submitQuiz not loaded yet. Please wait for quiz to fully load.');
+                if (e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                }
+                return false;
+            };
         }
         
         // Prevent any automatic page reloads
