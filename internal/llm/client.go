@@ -78,7 +78,7 @@ Remember: You are here to support, not to diagnose or treat. Always encourage pr
 	return &Client{
 		apiURL:       cfg.APIURL,
 		apiKey:       cfg.APIKey,
-		model:        cfg.Model,
+		model:        "", // Not used - model is hardcoded in API calls
 		systemPrompt: systemPrompt,
 		client: &http.Client{
 			Timeout: 30 * time.Second,
@@ -94,7 +94,6 @@ func (c *Client) Chat(ctx context.Context, conversationHistory []Message, userMe
 
 	ctx, span := llmTracer.Start(ctx, "LLM.Chat",
 		trace.WithAttributes(
-			attribute.String("llm.model", c.model),
 			attribute.Int("conversation.length", len(conversationHistory)),
 		))
 	defer span.End()
@@ -139,13 +138,8 @@ func (c *Client) Chat(ctx context.Context, conversationHistory []Message, userMe
 		return "", fmt.Errorf("failed to marshal request: %w", err)
 	}
 
-	// Determine API endpoint based on URL
+	// OpenAI-compatible endpoint
 	endpoint := fmt.Sprintf("%s/chat/completions", c.apiURL)
-	if c.apiURL == "https://generativelanguage.googleapis.com/v1beta" || 
-	   c.apiURL == "https://generativelanguage.googleapis.com/v1" {
-		// Gemini API uses different endpoint
-		endpoint = fmt.Sprintf("%s/models/%s:generateContent?key=%s", c.apiURL, c.model, c.apiKey)
-	}
 
 	req, err := http.NewRequestWithContext(ctx, "POST", endpoint, bytes.NewBuffer(jsonData))
 	if err != nil {
@@ -283,13 +277,6 @@ func (c *Client) chatGemini(ctx context.Context, conversationHistory []Message, 
 		return "", fmt.Errorf("failed to marshal Gemini request: %w", err)
 	}
 
-	// Gemini model name - use gemini-1.5-flash as default (faster and cheaper)
-	// If model is specified and starts with "gemini", use it; otherwise use default
-	modelName := c.model
-	if modelName == "" || !strings.HasPrefix(strings.ToLower(modelName), "gemini") {
-		modelName = "gemini-1.5-flash" // Default to flash for speed and cost
-	}
-	
 	// Ensure API URL ends with /v1beta (Gemini API requirement)
 	apiURL := c.apiURL
 	if !strings.HasSuffix(apiURL, "/v1beta") && !strings.HasSuffix(apiURL, "/v1") {
@@ -298,8 +285,10 @@ func (c *Client) chatGemini(ctx context.Context, conversationHistory []Message, 
 		}
 	}
 	
+	// Use Gemini 3 Pro Preview - hardcoded, no configuration needed
+	modelName := "gemini-3.0-pro-preview"
 	endpoint := fmt.Sprintf("%s/models/%s:generateContent?key=%s", apiURL, modelName, c.apiKey)
-	log.Printf("🔵 Calling Gemini API: %s (model: %s)", endpoint, modelName)
+	log.Printf("🔵 Calling Gemini API: %s", endpoint)
 	log.Printf("🔵 Request body: %s", string(jsonData))
 	
 	req, err := http.NewRequestWithContext(ctx, "POST", endpoint, bytes.NewBuffer(jsonData))

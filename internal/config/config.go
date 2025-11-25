@@ -66,7 +66,7 @@ func Load() (*Config, error) {
 		LLM: LLMConfig{
 			APIURL: getEnv("LLM_API_URL", getEnv("GEMINI_API_URL", "https://generativelanguage.googleapis.com/v1beta")), // Default to Gemini API
 			APIKey: getEnv("LLM_API_KEY", getEnv("GEMINI_API_KEY", "")), // Only API key needed
-			Model:  getEnv("LLM_MODEL", getEnv("GEMINI_MODEL", "")), // Model is optional, will use default if empty
+			Model:  "", // Model not used - hardcoded in client
 		},
 		OpenTelemetry: OpenTelemetryConfig{
 			JaegerEndpoint: getEnv("JAEGER_ENDPOINT", "http://localhost:14268/api/traces"),
