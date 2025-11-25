@@ -256,6 +256,13 @@ func (c *Client) listGeminiModels(ctx context.Context) ([]string, error) {
 		if supportsGenerateContent {
 			// Extract model name (format: models/gemini-xxx)
 			modelName := strings.TrimPrefix(model.Name, "models/")
+			
+			// Skip experimental models (they have stricter free tier limits)
+			if strings.Contains(modelName, "-exp") || strings.Contains(modelName, "experimental") {
+				log.Printf("⏭️  Skipping experimental model: %s (%s)", modelName, model.DisplayName)
+				continue
+			}
+			
 			availableModels = append(availableModels, modelName)
 			log.Printf("✅ Available model: %s (%s)", modelName, model.DisplayName)
 		}
@@ -355,20 +362,23 @@ func (c *Client) chatGemini(ctx context.Context, conversationHistory []Message, 
 	}
 	
 	// Try to get available models first, then use the first one that supports generateContent
-	// For free tier, common models are: gemini-pro, gemini-1.5-flash, gemini-1.5-pro
+	// For free tier, prioritize: gemini-pro, gemini-1.5-flash (best for free tier)
 	modelName := "gemini-pro" // Default fallback for free tier
 	
 	// Try to list available models
 	availableModels, err := c.listGeminiModels(ctx)
 	if err == nil && len(availableModels) > 0 {
-		// Prefer gemini-pro for free tier, then gemini-1.5-flash, then any other
-		preferredModels := []string{"gemini-pro", "gemini-1.5-flash", "gemini-1.5-pro"}
+		// Prefer free-tier friendly models in order of preference
+		// gemini-1.5-flash is fastest and cheapest for free tier
+		// gemini-pro is the original stable model
+		preferredModels := []string{"gemini-1.5-flash", "gemini-pro", "gemini-1.5-pro"}
 		found := false
 		for _, preferred := range preferredModels {
 			for _, available := range availableModels {
 				if available == preferred {
 					modelName = preferred
 					found = true
+					log.Printf("✅ Selected preferred free-tier model: %s", modelName)
 					break
 				}
 			}
@@ -377,10 +387,11 @@ func (c *Client) chatGemini(ctx context.Context, conversationHistory []Message, 
 			}
 		}
 		if !found {
-			// Use first available model
+			// Use first available non-experimental model
 			modelName = availableModels[0]
+			log.Printf("✅ Using first available model: %s", modelName)
 		}
-		log.Printf("✅ Using model: %s (from %d available models)", modelName, len(availableModels))
+		log.Printf("📊 Model selection: %s (from %d available models)", modelName, len(availableModels))
 	} else {
 		log.Printf("⚠️  Could not list models, using default: %s (error: %v)", modelName, err)
 	}
