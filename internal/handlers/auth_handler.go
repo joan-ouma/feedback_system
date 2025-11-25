@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"path/filepath"
+	"strings"
 
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
@@ -24,7 +25,29 @@ type TokenDisplayData struct {
 }
 
 func NewAuthHandler(authService *service.AuthService, sessionSecret string, templateDir string) (*AuthHandler, error) {
-	tmpl := template.New("")
+	tmpl := template.New("").Funcs(template.FuncMap{
+		"split": func(s, sep string) []string {
+			return strings.Split(s, sep)
+		},
+		"trim": func(s string) string {
+			return strings.TrimSpace(s)
+		},
+		"replace": func(s, old, new string) string {
+			return strings.ReplaceAll(s, old, new)
+		},
+		"add": func(a, b int) int {
+			return a + b
+		},
+		"le": func(a, b int) bool {
+			return a <= b
+		},
+		"gt": func(a, b int) bool {
+			return a > b
+		},
+		"len": func(s string) int {
+			return len(s)
+		},
+	})
 	
 	// Load template files
 	pattern := filepath.Join(templateDir, "*.html")

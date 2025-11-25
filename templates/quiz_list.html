@@ -50,14 +50,8 @@
                             <span style="font-size: 13px; opacity: 0.9;">{{$result}}</span>
                         </div>
                         {{if and $moodItem.Recommendation $moodItem.Recommendation.Recommendations}}
-                            <div style="font-size: 12px; opacity: 0.95; line-height: 1.5; margin-top: 8px; max-height: 80px; overflow-y: auto;">
-                                {{$recs := split $moodItem.Recommendation.Recommendations "\n"}}
-                                {{range $rec := $recs}}
-                                    {{$trimmed := trim $rec}}
-                                    {{if gt (len $trimmed) 0}}
-                                        <div style="margin-bottom: 4px;">• {{$trimmed}}</div>
-                                    {{end}}
-                                {{end}}
+                            <div style="font-size: 12px; opacity: 0.95; line-height: 1.5; margin-top: 8px; max-height: 80px; overflow-y: auto; white-space: pre-line;">
+                                {{$moodItem.Recommendation.Recommendations}}
                             </div>
                         {{end}}
                     {{else}}
@@ -78,14 +72,8 @@
                             <span style="font-size: 13px; opacity: 0.9;">{{$result}}</span>
                         </div>
                         {{if and $stressItem.Recommendation $stressItem.Recommendation.Recommendations}}
-                            <div style="font-size: 12px; opacity: 0.95; line-height: 1.5; margin-top: 8px; max-height: 80px; overflow-y: auto;">
-                                {{$recs := split $stressItem.Recommendation.Recommendations "\n"}}
-                                {{range $rec := $recs}}
-                                    {{$trimmed := trim $rec}}
-                                    {{if gt (len $trimmed) 0}}
-                                        <div style="margin-bottom: 4px;">• {{$trimmed}}</div>
-                                    {{end}}
-                                {{end}}
+                            <div style="font-size: 12px; opacity: 0.95; line-height: 1.5; margin-top: 8px; max-height: 80px; overflow-y: auto; white-space: pre-line;">
+                                {{$stressItem.Recommendation.Recommendations}}
                             </div>
                         {{end}}
                     {{else}}
@@ -106,14 +94,8 @@
                             <span style="font-size: 13px; opacity: 0.9;">{{$result}}</span>
                         </div>
                         {{if and $anxietyItem.Recommendation $anxietyItem.Recommendation.Recommendations}}
-                            <div style="font-size: 12px; opacity: 0.95; line-height: 1.5; margin-top: 8px; max-height: 80px; overflow-y: auto;">
-                                {{$recs := split $anxietyItem.Recommendation.Recommendations "\n"}}
-                                {{range $rec := $recs}}
-                                    {{$trimmed := trim $rec}}
-                                    {{if gt (len $trimmed) 0}}
-                                        <div style="margin-bottom: 4px;">• {{$trimmed}}</div>
-                                    {{end}}
-                                {{end}}
+                            <div style="font-size: 12px; opacity: 0.95; line-height: 1.5; margin-top: 8px; max-height: 80px; overflow-y: auto; white-space: pre-line;">
+                                {{$anxietyItem.Recommendation.Recommendations}}
                             </div>
                         {{end}}
                     {{else}}
@@ -134,14 +116,8 @@
                             <span style="font-size: 13px; opacity: 0.9;">{{$result}}</span>
                         </div>
                         {{if and $wellnessItem.Recommendation $wellnessItem.Recommendation.Recommendations}}
-                            <div style="font-size: 12px; opacity: 0.95; line-height: 1.5; margin-top: 8px; max-height: 80px; overflow-y: auto;">
-                                {{$recs := split $wellnessItem.Recommendation.Recommendations "\n"}}
-                                {{range $rec := $recs}}
-                                    {{$trimmed := trim $rec}}
-                                    {{if gt (len $trimmed) 0}}
-                                        <div style="margin-bottom: 4px;">• {{$trimmed}}</div>
-                                    {{end}}
-                                {{end}}
+                            <div style="font-size: 12px; opacity: 0.95; line-height: 1.5; margin-top: 8px; max-height: 80px; overflow-y: auto; white-space: pre-line;">
+                                {{$wellnessItem.Recommendation.Recommendations}}
                             </div>
                         {{end}}
                     {{else}}

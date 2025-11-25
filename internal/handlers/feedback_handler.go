@@ -5,6 +5,7 @@ import (
 	"html/template"
 	"net/http"
 	"path/filepath"
+	"strings"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"github.com/gorilla/mux"
@@ -33,7 +34,29 @@ type FeedbacksViewData struct {
 }
 
 func NewFeedbackHandler(feedbackService *service.FeedbackService, authService *service.AuthService, templateDir string) (*FeedbackHandler, error) {
-	tmpl := template.New("").Funcs(template.FuncMap{})
+	tmpl := template.New("").Funcs(template.FuncMap{
+		"split": func(s, sep string) []string {
+			return strings.Split(s, sep)
+		},
+		"trim": func(s string) string {
+			return strings.TrimSpace(s)
+		},
+		"replace": func(s, old, new string) string {
+			return strings.ReplaceAll(s, old, new)
+		},
+		"add": func(a, b int) int {
+			return a + b
+		},
+		"le": func(a, b int) bool {
+			return a <= b
+		},
+		"gt": func(a, b int) bool {
+			return a > b
+		},
+		"len": func(s string) int {
+			return len(s)
+		},
+	})
 	
 	// Load template files
 	pattern := filepath.Join(templateDir, "*.html")
