@@ -83,16 +83,75 @@ func main() {
 	moodService := service.NewMoodService(moodRepo, quoteRepo, llmClient)
 	quizService := service.NewQuizService(quizRepo, llmClient)
 
-	// Get the project root directory (two levels up from cmd/server/)
-	// This works whether running from project root or cmd/server/
-	_, execPath, _, _ := runtime.Caller(0)
-	projectRoot := filepath.Join(filepath.Dir(execPath), "..", "..")
-	templateDir := filepath.Join(projectRoot, "templates")
-	staticDir := filepath.Join(projectRoot, "static")
+	// Get the project root directory
+	// Try multiple methods to find the project root
+	var templateDir, staticDir string
 
-	log.Printf("Project root: %s", projectRoot)
+	// Method 1: Check environment variable (useful for Docker/CI)
+	if envTemplateDir := os.Getenv("TEMPLATE_DIR"); envTemplateDir != "" {
+		templateDir = envTemplateDir
+		staticDir = os.Getenv("STATIC_DIR")
+		if staticDir == "" {
+			staticDir = filepath.Join(filepath.Dir(envTemplateDir), "static")
+		}
+		log.Printf("Using template directory from environment: %s", templateDir)
+	} else {
+		// Method 2: Try to find relative to current working directory
+		cwd, err := os.Getwd()
+		if err == nil {
+			// Check if we're in project root
+			if _, err := os.Stat(filepath.Join(cwd, "templates")); err == nil {
+				templateDir = filepath.Join(cwd, "templates")
+				staticDir = filepath.Join(cwd, "static")
+				log.Printf("Found templates relative to working directory: %s", cwd)
+			} else {
+				// Check if we're in cmd/server/
+				if _, err := os.Stat(filepath.Join(cwd, "..", "..", "templates")); err == nil {
+					templateDir = filepath.Join(cwd, "..", "..", "templates")
+					staticDir = filepath.Join(cwd, "..", "..", "static")
+					log.Printf("Found templates two levels up from working directory")
+				} else {
+					// Method 3: Use runtime.Caller to find the source file location
+					_, execPath, _, ok := runtime.Caller(0)
+					if ok {
+						projectRoot := filepath.Join(filepath.Dir(execPath), "..", "..")
+						templateDir = filepath.Join(projectRoot, "templates")
+						staticDir = filepath.Join(projectRoot, "static")
+						log.Printf("Using runtime.Caller to find templates: %s", projectRoot)
+					} else {
+						// Fallback: use relative paths
+						templateDir = "templates"
+						staticDir = "static"
+						log.Printf("Using fallback relative paths: templates/ and static/")
+					}
+				}
+			}
+		} else {
+			// Fallback: use relative paths
+			templateDir = "templates"
+			staticDir = "static"
+			log.Printf("Could not get working directory, using fallback relative paths")
+		}
+	}
+
+	// Convert to absolute paths for reliability
+	if absTemplateDir, err := filepath.Abs(templateDir); err == nil {
+		templateDir = absTemplateDir
+	}
+	if absStaticDir, err := filepath.Abs(staticDir); err == nil {
+		staticDir = absStaticDir
+	}
+
 	log.Printf("Template directory: %s", templateDir)
 	log.Printf("Static directory: %s", staticDir)
+
+	// Verify directories exist
+	if _, err := os.Stat(templateDir); os.IsNotExist(err) {
+		log.Fatalf("Template directory does not exist: %s", templateDir)
+	}
+	if _, err := os.Stat(staticDir); os.IsNotExist(err) {
+		log.Printf("Warning: Static directory does not exist: %s", staticDir)
+	}
 
 	// Load templates with helper functions
 	tmpl := template.New("").Funcs(template.FuncMap{
