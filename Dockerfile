@@ -1,15 +1,29 @@
-# Final stage - FIXED: Remove postgresql-client
+# Multi-stage build for Render deployment
+FROM golang:1.21-alpine AS builder
+
+WORKDIR /app
+
+# Copy go mod files
+COPY go.mod go.sum ./
+RUN go mod download
+
+# Copy source code
+COPY . .
+
+# Build the application
+RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o bin/server cmd/server/main.go
+
+# Final stage - MongoDB optimized (no postgresql-client)
 FROM alpine:latest
 
 RUN apk --no-cache add ca-certificates
-# Removed: postgresql-client (not needed for MongoDB)
 
 WORKDIR /root/
 
-# Copy the binary from builder
+# Copy the binary from builder stage
 COPY --from=builder /app/bin/server .
 
-# Copy migrations
+# Copy migrations (if needed for MongoDB seeds)
 COPY --from=builder /app/migrations ./migrations
 
 # Copy static files and templates
