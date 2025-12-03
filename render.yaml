@@ -1,10 +1,10 @@
 services:
   - type: web
     name: feedback-sys
-    env: go
+    env: docker
     plan: free
-    buildCommand: go mod download && go build -o bin/server cmd/server/main.go
-    startCommand: ./bin/server
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
     envVars:
       - key: PORT
         value: 8080
@@ -22,6 +22,10 @@ services:
         value: false
       - key: JAEGER_ENDPOINT
         value: http://localhost:14268/api/traces
+      - key: TEMPLATE_DIR
+        value: /root/templates
+      - key: STATIC_DIR
+        value: /root/static
 
 databases:
   - name: feedback-sys-db

@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Feedback System - Your Response</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .gradient-bg { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .glass { backdrop-filter: blur(10px); background: rgba(255,255,255,0.25); }
+        .shadow-xl { box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen py-12 px-4">
+    <div class="max-w-4xl mx-auto">
+        <!-- Header -->
+        <div class="text-center mb-12">
+            <div class="inline-flex items-center bg-white rounded-full p-4 shadow-xl mb-6">
+                <i class="fas fa-heart text-3xl text-pink-500 mr-4"></i>
+                <h1 class="text-3xl font-bold text-gray-800">We're Here For You</h1>
+            </div>
+        </div>
+
+        <!-- Main Response Card -->
+        <div class="bg-white rounded-2xl shadow-2xl overflow-hidden glass">
+            <div class="p-8 lg:p-12">
+                
+                <!-- Empathy Section -->
+                <div class="mb-8 p-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border-l-4 border-blue-400">
+                    <div class="flex items-start">
+                        <i class="fas fa-hand-holding-heart text-2xl text-blue-500 mt-1 mr-4 flex-shrink-0"></i>
+                        <div>
+                            <h2 class="text-2xl font-semibold text-gray-800 mb-2">{{.EmpathyTitle}}</h2>
+                            <p class="text-gray-700 leading-relaxed">{{.EmpathyMessage}}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Crisis Resources -->
+                {{if .ShowCrisisResources}}
+                <div class="mb-8 p-6 bg-red-50 border border-red-200 rounded-xl">
+                    <div class="flex items-start">
+                        <i class="fas fa-exclamation-triangle text-2xl text-red-500 mt-1 mr-4 flex-shrink-0"></i>
+                        <div>
+                            <h3 class="text-xl font-semibold text-red-800 mb-3">Immediate Help Available</h3>
+                            <div class="grid md:grid-cols-3 gap-4 text-sm">
+                                <div class="bg-white p-4 rounded-lg shadow-sm">
+                                    <div class="font-bold text-lg text-red-600 mb-1">988</div>
+                                    <div class="text-gray-700">US/Canada Suicide Lifeline</div>
+                                </div>
+                                <div class="bg-white p-4 rounded-lg shadow-sm">
+                                    <div class="font-bold text-lg text-red-600 mb-1">111</div>
+                                    <div class="text-gray-700">UK Crisis Support</div>
+                                </div>
+                                <div class="bg-white p-4 rounded-lg shadow-sm">
+                                    <div class="font-bold text-lg text-blue-600 mb-1">24/7</div>
+                                    <div class="text-gray-700">Free & Confidential</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {{end}}
+
+                <!-- Actionable Tips -->
+                <div>
+                    <h3 class="text-2xl font-semibold text-gray-800 mb-6 flex items-center">
+                        <i class="fas fa-lightbulb text-yellow-500 mr-3"></i>
+                        Quick Relief Strategies
+                    </h3>
+                    <div class="grid md:grid-cols-2 gap-6">
+                        {{range .Tips}}
+                        <div class="group bg-gradient-to-r from-gray-50 to-gray-100 p-6 rounded-xl hover:shadow-lg transition-all duration-300 border-l-4 {{.ColorClass}}">
+                            <div class="flex items-start">
+                                <div class="p-2 bg-white rounded-full w-12 h-12 flex items-center justify-center shadow-md group-hover:scale-110 transition-transform mr-4 flex-shrink-0">
+                                    <i class="{{.Icon}} text-xl {{.IconColor}}"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <h4 class="font-semibold text-lg text-gray-800 mb-2">{{.Title}}</h4>
+                                    <p class="text-gray-600 leading-relaxed">{{.Description}}</p>
+                                </div>
+                            </div>
+                        </div>
+                        {{end}}
+                    </div>
+                </div>
+
+                <!-- CTA Section -->
+                <div class="mt-12 pt-8 border-t border-gray-200 text-center">
+                    <p class="text-lg text-gray-700 mb-6 italic">"Asking for help is the first step toward healing."</p>
+                    <div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
+                        <a href="/consultation" class="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-8 py-4 rounded-xl font-semibold hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300">
+                            <i class="fas fa-user-md mr-2"></i>Continue Consultation
+                        </a>
+                        <a href="/dashboard" class="border-2 border-gray-300 text-gray-700 px-8 py-4 rounded-xl font-semibold hover:bg-gray-50 hover:shadow-md transition-all duration-300">
+                            <i class="fas fa-home mr-2"></i>Back to Dashboard
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+

@@ -48,6 +48,7 @@ func main() {
         }
     }
 
+<<<<<<< HEAD
     // Initialize database (MongoDB)
     ctx := context.Background()
     log.Printf("Connecting to MongoDB: %s", maskConnectionString(cfg.Database.URI))
@@ -57,6 +58,17 @@ func main() {
     }
     defer db.Close()
     log.Println("MongoDB connection established")
+=======
+	// Initialize database (MongoDB)
+	ctx := context.Background()
+	log.Printf("Connecting to MongoDB: %s", maskConnectionString(cfg.Database.URI))
+	db, err := database.NewDB(ctx, cfg.Database.URI)
+	if err != nil {
+		log.Fatalf("Failed to connect to database: %v", err)
+	}
+	defer db.Close()
+	log.Println("MongoDB connection established")
+>>>>>>> 964492f (Improve the app ui)
 
     // Seed quizzes if needed
     if err := repository.SeedQuizzes(ctx, db); err != nil {
@@ -83,6 +95,7 @@ func main() {
     moodService := service.NewMoodService(moodRepo, quoteRepo, llmClient)
     quizService := service.NewQuizService(quizRepo, llmClient)
 
+<<<<<<< HEAD
     // Get the project root directory for templates/static
     var templateDir, staticDir string
 
@@ -140,10 +153,59 @@ func main() {
     if absStaticDir, err := filepath.Abs(staticDir); err == nil {
         staticDir = absStaticDir
     }
+=======
+	// Determine project root directory for templates/static files
+	var templateDir, staticDir string
+	if envTemplateDir := os.Getenv("TEMPLATE_DIR"); envTemplateDir != "" {
+		templateDir = envTemplateDir
+		staticDir = os.Getenv("STATIC_DIR")
+		if staticDir == "" {
+			staticDir = filepath.Join(filepath.Dir(envTemplateDir), "static")
+		}
+		log.Printf("Using template directory from environment: %s", templateDir)
+	} else {
+		cwd, err := os.Getwd()
+		if err == nil {
+			if _, err := os.Stat(filepath.Join(cwd, "templates")); err == nil {
+				templateDir = filepath.Join(cwd, "templates")
+				staticDir = filepath.Join(cwd, "static")
+				log.Printf("Found templates relative to working directory: %s", cwd)
+			} else if _, err := os.Stat(filepath.Join(cwd, "..", "..", "templates")); err == nil {
+				templateDir = filepath.Join(cwd, "..", "..", "templates")
+				staticDir = filepath.Join(cwd, "..", "..", "static")
+				log.Printf("Found templates two levels up")
+			} else {
+				_, execPath, _, ok := runtime.Caller(0)
+				if ok {
+					projectRoot := filepath.Join(filepath.Dir(execPath), "..", "..")
+					templateDir = filepath.Join(projectRoot, "templates")
+					staticDir = filepath.Join(projectRoot, "static")
+					log.Printf("Using runtime.Caller to find templates: %s", projectRoot)
+				} else {
+					templateDir = "templates"
+					staticDir = "static"
+					log.Printf("Using fallback relative paths for templates/static")
+				}
+			}
+		} else {
+			templateDir = "templates"
+			staticDir = "static"
+			log.Printf("Could not get working directory, using fallback relative paths")
+		}
+	}
+
+	if absTemplateDir, err := filepath.Abs(templateDir); err == nil {
+		templateDir = absTemplateDir
+	}
+	if absStaticDir, err := filepath.Abs(staticDir); err == nil {
+		staticDir = absStaticDir
+	}
+>>>>>>> 964492f (Improve the app ui)
 
     log.Printf("Template directory: %s", templateDir)
     log.Printf("Static directory: %s", staticDir)
 
+<<<<<<< HEAD
     // Verify directories exist
     if _, err := os.Stat(templateDir); os.IsNotExist(err) {
         log.Fatalf("Template directory does not exist: %s", templateDir)
@@ -151,6 +213,14 @@ func main() {
     if _, err := os.Stat(staticDir); os.IsNotExist(err) {
         log.Printf("Warning: Static directory does not exist: %s", staticDir)
     }
+=======
+	if _, err := os.Stat(templateDir); os.IsNotExist(err) {
+		log.Fatalf("Template directory does not exist: %s", templateDir)
+	}
+	if _, err := os.Stat(staticDir); os.IsNotExist(err) {
+		log.Printf("Warning: Static directory does not exist: %s", staticDir)
+	}
+>>>>>>> 964492f (Improve the app ui)
 
     // Load templates with helper functions
     tmpl := template.New("").Funcs(template.FuncMap{
@@ -181,6 +251,7 @@ func main() {
     // Setup router
     router := mux.NewRouter()
 
+<<<<<<< HEAD
     // Static files
     router.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir(staticDir))))
 
@@ -227,12 +298,63 @@ func main() {
     quit := make(chan os.Signal, 1)
     signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
     <-quit
+=======
+	// Serve static files
+	router.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir(staticDir))))
+
+	// Register public routes
+	authHandler.RegisterRoutes(router)
+
+	// Protected routes requiring auth
+	protectedRouter := router.PathPrefix("").Subrouter()
+	protectedRouter.Use(middleware.NewAuthMiddleware(cfg.Server.SessionSecret).RequireAuth)
+	feedbackHandler.RegisterRoutes(protectedRouter)
+	consultationHandler.RegisterRoutes(protectedRouter)
+	moodHandler.RegisterRoutes(protectedRouter)
+	quizHandler.RegisterRoutes(protectedRouter)
+
+	// Root path redirect
+	router.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, "/signup", http.StatusSeeOther)
+	}).Methods("GET")
+
+	var handler http.Handler = router
+	if cfg.OpenTelemetry.Enabled {
+		handler = otelhttp.NewHandler(router, "feedback-sys")
+	}
+
+	srv := &http.Server{
+		Addr:         ":" + cfg.Server.Port,
+		Handler:      handler,
+		ReadTimeout:  15 * time.Second,
+		WriteTimeout: 15 * time.Second,
+		IdleTimeout:  60 * time.Second,
+	}
+
+	// Run server in goroutine for graceful shutdown
+	go func() {
+		log.Printf("Server starting on port %s", cfg.Server.Port)
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("Server failed to start: %v", err)
+		}
+	}()
+
+	// Listen for shutdown signals
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	<-quit
+>>>>>>> 964492f (Improve the app ui)
 
     log.Println("Shutting down server...")
 
+<<<<<<< HEAD
     // Graceful shutdown
     ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
     defer cancel()
+=======
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+>>>>>>> 964492f (Improve the app ui)
 
     if err := srv.Shutdown(ctx); err != nil {
         log.Fatalf("Server forced to shutdown: %v", err)
@@ -241,8 +363,8 @@ func main() {
     log.Println("Server exited")
 }
 
-// maskConnectionString masks password in connection string for logging
 func maskConnectionString(uri string) string {
+<<<<<<< HEAD
     // Simple masking - replace password with ***
     // Format: mongodb+srv://user:password@host
     if idx := strings.Index(uri, "@"); idx > 0 {
@@ -256,10 +378,23 @@ func maskConnectionString(uri string) string {
         }
     }
     return uri
+=======
+	if idx := strings.Index(uri, "@"); idx > 0 {
+		if userPassIdx := strings.Index(uri, "://"); userPassIdx > 0 {
+			prefix := uri[:userPassIdx+3]
+			userPass := uri[userPassIdx+3 : idx]
+			if colonIdx := strings.Index(userPass, ":"); colonIdx > 0 {
+				user := userPass[:colonIdx]
+				return prefix + user + ":***@" + uri[idx+1:]
+			}
+		}
+	}
+	return uri
+>>>>>>> 964492f (Improve the app ui)
 }
 
-// initTracing initializes OpenTelemetry tracing with Jaeger exporter
 func initTracing(jaegerEndpoint string) error {
+<<<<<<< HEAD
     // Create Jaeger exporter
     exp, err := jaeger.New(jaeger.WithCollectorEndpoint(jaeger.WithEndpoint(jaegerEndpoint)))
     if err != nil {
@@ -283,6 +418,28 @@ func initTracing(jaegerEndpoint string) error {
         tracesdk.WithResource(res),
         tracesdk.WithSampler(tracesdk.AlwaysSample()),
     )
+=======
+	exp, err := jaeger.New(jaeger.WithCollectorEndpoint(jaeger.WithEndpoint(jaegerEndpoint)))
+	if err != nil {
+		return fmt.Errorf("failed to create Jaeger exporter: %w", err)
+	}
+
+	res, err := resource.New(context.Background(),
+		resource.WithAttributes(
+			semconv.ServiceName("feedback-sys"),
+			semconv.ServiceVersion("1.0.0"),
+		),
+	)
+	if err != nil {
+		return fmt.Errorf("failed to create resource: %w", err)
+	}
+
+	tp := tracesdk.NewTracerProvider(
+		tracesdk.WithBatcher(exp),
+		tracesdk.WithResource(res),
+		tracesdk.WithSampler(tracesdk.AlwaysSample()),
+	)
+>>>>>>> 964492f (Improve the app ui)
 
     otel.SetTracerProvider(tp)
     otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(
