@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"path/filepath"
+	"runtime"
 	"strings"
 	"syscall"
 	"time"
@@ -81,28 +83,40 @@ func main() {
 	moodService := service.NewMoodService(moodRepo, quoteRepo, llmClient)
 	quizService := service.NewQuizService(quizRepo, llmClient)
 
+	// Get the project root directory (two levels up from cmd/server/)
+	// This works whether running from project root or cmd/server/
+	_, execPath, _, _ := runtime.Caller(0)
+	projectRoot := filepath.Join(filepath.Dir(execPath), "..", "..")
+	templateDir := filepath.Join(projectRoot, "templates")
+	staticDir := filepath.Join(projectRoot, "static")
+
+	log.Printf("Project root: %s", projectRoot)
+	log.Printf("Template directory: %s", templateDir)
+	log.Printf("Static directory: %s", staticDir)
+
 	// Load templates with helper functions
 	tmpl := template.New("").Funcs(template.FuncMap{
 		"replace": func(s, old, new string) string {
 			return strings.ReplaceAll(s, old, new)
 		},
 	})
-	templatePattern := "templates/*.html"
+	templatePattern := filepath.Join(templateDir, "*.html")
 	templates, err := tmpl.ParseGlob(templatePattern)
 	if err != nil {
-		log.Fatalf("Failed to load templates: %v", err)
+		log.Fatalf("Failed to load templates from %s: %v", templatePattern, err)
 	}
+	log.Printf("Successfully loaded templates from %s", templateDir)
 
 	// Initialize handlers
-	authHandler, err := handlers.NewAuthHandler(authService, cfg.Server.SessionSecret, "templates")
+	authHandler, err := handlers.NewAuthHandler(authService, cfg.Server.SessionSecret, templateDir)
 	if err != nil {
 		log.Fatalf("Failed to initialize auth handler: %v", err)
 	}
-	feedbackHandler, err := handlers.NewFeedbackHandler(feedbackService, authService, quizService, "templates")
+	feedbackHandler, err := handlers.NewFeedbackHandler(feedbackService, authService, quizService, templateDir)
 	if err != nil {
 		log.Fatalf("Failed to initialize feedback handler: %v", err)
 	}
-	consultationHandler := handlers.NewConsultationHandler(consultationService, authService)
+	consultationHandler := handlers.NewConsultationHandler(consultationService, authService, templateDir)
 	moodHandler := handlers.NewMoodHandler(moodService, authService, templates)
 	quizHandler := handlers.NewQuizHandler(quizService, authService, templates)
 
@@ -110,7 +124,7 @@ func main() {
 	router := mux.NewRouter()
 
 	// Static files
-	router.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("./static/"))))
+	router.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir(staticDir))))
 
 	// Public routes
 	authHandler.RegisterRoutes(router)
