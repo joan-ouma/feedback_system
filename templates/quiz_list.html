@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,10 +8,11 @@
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
     <link rel="stylesheet" href="/static/css/style.css">
 </head>
+
 <body>
     <!-- Mobile Sidebar Overlay -->
     <div class="sidebar-overlay" id="sidebar-overlay"></div>
-    
+
     <!-- Mobile Sidebar -->
     <div class="mobile-sidebar" id="mobile-sidebar">
         <div class="sidebar-header">
@@ -21,10 +23,11 @@
             <a href="/mood">😊 Mood Tracking</a>
             <a href="/quizzes" class="active">📝 Quizzes</a>
             <a href="/consultation">💬 Consultation</a>
+            <a href="/crisis" class="nav-crisis-link">🆘 Crisis Resources</a>
             <button hx-post="/logout" hx-target="body" class="btn-secondary">🚪 Logout</button>
         </nav>
     </div>
-    
+
     <nav class="navbar">
         <div class="container">
             <button class="menu-toggle" id="menu-toggle" aria-label="Toggle menu">
@@ -38,11 +41,12 @@
                 <a href="/mood">Mood Tracking</a>
                 <a href="/quizzes">Quizzes</a>
                 <a href="/consultation">Consultation</a>
+                <a href="/crisis" class="nav-crisis-link">🆘 Crisis Resources</a>
                 <button hx-post="/logout" hx-target="body" class="btn-secondary">Logout</button>
             </div>
         </div>
     </nav>
-    
+
     <main class="container">
         <div class="dashboard-header">
             <h1>Mental Health Quizzes</h1>
@@ -51,153 +55,180 @@
 
         <!-- Quiz Results Summary - Prominent Display -->
         {{if .QuizHistory}}
-        <div class="card" style="margin-bottom: 30px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; box-shadow: 0 8px 24px rgba(102,126,234,0.3);">
-            <h2 style="margin-top: 0; color: white; margin-bottom: 25px; font-size: 28px; text-align: center;">📊 Your Mental Health Assessment Results</h2>
-            <p style="text-align: center; opacity: 0.9; margin-bottom: 25px; font-size: 16px;">Track your progress and get personalized insights</p>
-            
+        <div class="card"
+            style="margin-bottom: 30px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; box-shadow: 0 8px 24px rgba(102,126,234,0.3);">
+            <h2 style="margin-top: 0; color: white; margin-bottom: 25px; font-size: 28px; text-align: center;">📊 Your
+                Mental Health Assessment Results</h2>
+            <p style="text-align: center; opacity: 0.9; margin-bottom: 25px; font-size: 16px;">Track your progress and
+                get personalized insights</p>
+
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
                 {{$moodItem := index .QuizHistory "mood_assessment"}}
                 {{$stressItem := index .QuizHistory "stress_level"}}
                 {{$anxietyItem := index .QuizHistory "anxiety_check"}}
                 {{$wellnessItem := index .QuizHistory "wellness"}}
-                
+
                 <!-- Mood Assessment -->
-                <div style="background: rgba(255,255,255,0.2); padding: 20px; border-radius: 12px; backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.3);">
-                    <h4 style="margin: 0 0 15px 0; color: white; font-size: 18px; font-weight: 600;">📊 Daily Mood Assessment</h4>
+                <div
+                    style="background: rgba(255,255,255,0.2); padding: 20px; border-radius: 12px; backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.3);">
+                    <h4 style="margin: 0 0 15px 0; color: white; font-size: 18px; font-weight: 600;">📊 Daily Mood
+                        Assessment</h4>
                     {{if and $moodItem $moodItem.Response}}
-                        {{$score := $moodItem.Response.Score}}
-                        {{$result := $moodItem.Response.Result}}
-                        {{$scoreColor := "28a745"}}
-                        {{if le $score 4}}{{$scoreColor = "dc3545"}}{{else if le $score 6}}{{$scoreColor = "ffc107"}}{{end}}
-                        <div style="text-align: center; margin-bottom: 15px;">
-                            <div style="display: inline-block; background: #{{$scoreColor}}; color: white; padding: 12px 24px; border-radius: 25px; font-weight: bold; font-size: 24px; box-shadow: 0 4px 12px rgba(0,0,0,0.2);">
-                                Score: {{$score}}/10
-                            </div>
+                    {{$score := $moodItem.Response.Score}}
+                    {{$result := $moodItem.Response.Result}}
+                    {{$scoreColor := "28a745"}}
+                    {{if le $score 4}}{{$scoreColor = "dc3545"}}{{else if le $score 6}}{{$scoreColor = "ffc107"}}{{end}}
+                    <div style="text-align: center; margin-bottom: 15px;">
+                        <div
+                            style="display: inline-block; background: #{{$scoreColor}}; color: white; padding: 12px 24px; border-radius: 25px; font-weight: bold; font-size: 24px; box-shadow: 0 4px 12px rgba(0,0,0,0.2);">
+                            Score: {{$score}}/10
                         </div>
-                        <div style="text-align: center; margin-bottom: 15px;">
-                            <span style="font-size: 14px; opacity: 0.95; font-weight: 500;">{{$result}}</span>
+                    </div>
+                    <div style="text-align: center; margin-bottom: 15px;">
+                        <span style="font-size: 14px; opacity: 0.95; font-weight: 500;">{{$result}}</span>
+                    </div>
+                    {{if and $moodItem.Recommendation $moodItem.Recommendation.Recommendations}}
+                    <div
+                        style="background: rgba(255,255,255,0.15); padding: 15px; border-radius: 8px; margin-top: 15px;">
+                        <h5 style="margin: 0 0 10px 0; color: white; font-size: 14px; font-weight: 600;">💡
+                            Recommendations:</h5>
+                        <div style="font-size: 13px; line-height: 1.7; color: rgba(255,255,255,0.95);">
+                            {{$recs := $moodItem.Recommendation.Recommendations}}
+                            {{$cleanRecs := replace $recs "**" ""}}
+                            {{$cleanRecs = replace $cleanRecs "*" ""}}
+                            {{$cleanRecs = replace $cleanRecs "#" ""}}
+                            {{$cleanRecs = replace $cleanRecs "_" ""}}
+                            {{$cleanRecs = replace $cleanRecs "`" ""}}
+                            {{$cleanRecs}}
                         </div>
-                        {{if and $moodItem.Recommendation $moodItem.Recommendation.Recommendations}}
-                            <div style="background: rgba(255,255,255,0.15); padding: 15px; border-radius: 8px; margin-top: 15px;">
-                                <h5 style="margin: 0 0 10px 0; color: white; font-size: 14px; font-weight: 600;">💡 Recommendations:</h5>
-                                <div style="font-size: 13px; line-height: 1.7; color: rgba(255,255,255,0.95);">
-                                    {{$recs := $moodItem.Recommendation.Recommendations}}
-                                    {{$cleanRecs := replace $recs "**" ""}}
-                                    {{$cleanRecs = replace $cleanRecs "*" ""}}
-                                    {{$cleanRecs = replace $cleanRecs "#" ""}}
-                                    {{$cleanRecs = replace $cleanRecs "_" ""}}
-                                    {{$cleanRecs = replace $cleanRecs "`" ""}}
-                                    {{$cleanRecs}}
-                                </div>
-                            </div>
-                        {{end}}
+                    </div>
+                    {{end}}
                     {{else}}
-                        <p style="margin: 0; font-size: 14px; opacity: 0.8; text-align: center; padding: 20px;">Not completed yet</p>
+                    <p style="margin: 0; font-size: 14px; opacity: 0.8; text-align: center; padding: 20px;">Not
+                        completed yet</p>
                     {{end}}
                 </div>
-                
+
                 <!-- Stress Level -->
-                <div style="background: rgba(255,255,255,0.2); padding: 20px; border-radius: 12px; backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.3);">
-                    <h4 style="margin: 0 0 15px 0; color: white; font-size: 18px; font-weight: 600;">😰 Stress Level Check</h4>
+                <div
+                    style="background: rgba(255,255,255,0.2); padding: 20px; border-radius: 12px; backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.3);">
+                    <h4 style="margin: 0 0 15px 0; color: white; font-size: 18px; font-weight: 600;">😰 Stress Level
+                        Check</h4>
                     {{if and $stressItem $stressItem.Response}}
-                        {{$score := $stressItem.Response.Score}}
-                        {{$result := $stressItem.Response.Result}}
-                        {{$scoreColor := "28a745"}}
-                        {{if le $score 4}}{{$scoreColor = "dc3545"}}{{else if le $score 6}}{{$scoreColor = "ffc107"}}{{end}}
-                        <div style="text-align: center; margin-bottom: 15px;">
-                            <div style="display: inline-block; background: #{{$scoreColor}}; color: white; padding: 12px 24px; border-radius: 25px; font-weight: bold; font-size: 24px; box-shadow: 0 4px 12px rgba(0,0,0,0.2);">
-                                Score: {{$score}}/10
-                            </div>
+                    {{$score := $stressItem.Response.Score}}
+                    {{$result := $stressItem.Response.Result}}
+                    {{$scoreColor := "28a745"}}
+                    {{if le $score 4}}{{$scoreColor = "dc3545"}}{{else if le $score 6}}{{$scoreColor = "ffc107"}}{{end}}
+                    <div style="text-align: center; margin-bottom: 15px;">
+                        <div
+                            style="display: inline-block; background: #{{$scoreColor}}; color: white; padding: 12px 24px; border-radius: 25px; font-weight: bold; font-size: 24px; box-shadow: 0 4px 12px rgba(0,0,0,0.2);">
+                            Score: {{$score}}/10
                         </div>
-                        <div style="text-align: center; margin-bottom: 15px;">
-                            <span style="font-size: 14px; opacity: 0.95; font-weight: 500;">{{$result}}</span>
+                    </div>
+                    <div style="text-align: center; margin-bottom: 15px;">
+                        <span style="font-size: 14px; opacity: 0.95; font-weight: 500;">{{$result}}</span>
+                    </div>
+                    {{if and $stressItem.Recommendation $stressItem.Recommendation.Recommendations}}
+                    <div
+                        style="background: rgba(255,255,255,0.15); padding: 15px; border-radius: 8px; margin-top: 15px;">
+                        <h5 style="margin: 0 0 10px 0; color: white; font-size: 14px; font-weight: 600;">💡
+                            Recommendations:</h5>
+                        <div style="font-size: 13px; line-height: 1.7; color: rgba(255,255,255,0.95);">
+                            {{$recs := $stressItem.Recommendation.Recommendations}}
+                            {{$cleanRecs := replace $recs "**" ""}}
+                            {{$cleanRecs = replace $cleanRecs "*" ""}}
+                            {{$cleanRecs = replace $cleanRecs "#" ""}}
+                            {{$cleanRecs = replace $cleanRecs "_" ""}}
+                            {{$cleanRecs = replace $cleanRecs "`" ""}}
+                            {{$cleanRecs}}
                         </div>
-                        {{if and $stressItem.Recommendation $stressItem.Recommendation.Recommendations}}
-                            <div style="background: rgba(255,255,255,0.15); padding: 15px; border-radius: 8px; margin-top: 15px;">
-                                <h5 style="margin: 0 0 10px 0; color: white; font-size: 14px; font-weight: 600;">💡 Recommendations:</h5>
-                                <div style="font-size: 13px; line-height: 1.7; color: rgba(255,255,255,0.95);">
-                                    {{$recs := $stressItem.Recommendation.Recommendations}}
-                                    {{$cleanRecs := replace $recs "**" ""}}
-                                    {{$cleanRecs = replace $cleanRecs "*" ""}}
-                                    {{$cleanRecs = replace $cleanRecs "#" ""}}
-                                    {{$cleanRecs = replace $cleanRecs "_" ""}}
-                                    {{$cleanRecs = replace $cleanRecs "`" ""}}
-                                    {{$cleanRecs}}
-                                </div>
-                            </div>
-                        {{end}}
+                    </div>
+                    {{end}}
                     {{else}}
-                        <p style="margin: 0; font-size: 14px; opacity: 0.8; text-align: center; padding: 20px;">Not completed yet</p>
+                    <p style="margin: 0; font-size: 14px; opacity: 0.8; text-align: center; padding: 20px;">Not
+                        completed yet</p>
                     {{end}}
                 </div>
-                
+
                 <!-- Anxiety Check -->
-                <div style="background: rgba(255,255,255,0.2); padding: 20px; border-radius: 12px; backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.3);">
-                    <h4 style="margin: 0 0 15px 0; color: white; font-size: 18px; font-weight: 600;">😟 Anxiety Check</h4>
+                <div
+                    style="background: rgba(255,255,255,0.2); padding: 20px; border-radius: 12px; backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.3);">
+                    <h4 style="margin: 0 0 15px 0; color: white; font-size: 18px; font-weight: 600;">😟 Anxiety Check
+                    </h4>
                     {{if and $anxietyItem $anxietyItem.Response}}
-                        {{$score := $anxietyItem.Response.Score}}
-                        {{$result := $anxietyItem.Response.Result}}
-                        {{$scoreColor := "28a745"}}
-                        {{if le $score 4}}{{$scoreColor = "dc3545"}}{{else if le $score 6}}{{$scoreColor = "ffc107"}}{{end}}
-                        <div style="text-align: center; margin-bottom: 15px;">
-                            <div style="display: inline-block; background: #{{$scoreColor}}; color: white; padding: 12px 24px; border-radius: 25px; font-weight: bold; font-size: 24px; box-shadow: 0 4px 12px rgba(0,0,0,0.2);">
-                                Score: {{$score}}/10
-                            </div>
+                    {{$score := $anxietyItem.Response.Score}}
+                    {{$result := $anxietyItem.Response.Result}}
+                    {{$scoreColor := "28a745"}}
+                    {{if le $score 4}}{{$scoreColor = "dc3545"}}{{else if le $score 6}}{{$scoreColor = "ffc107"}}{{end}}
+                    <div style="text-align: center; margin-bottom: 15px;">
+                        <div
+                            style="display: inline-block; background: #{{$scoreColor}}; color: white; padding: 12px 24px; border-radius: 25px; font-weight: bold; font-size: 24px; box-shadow: 0 4px 12px rgba(0,0,0,0.2);">
+                            Score: {{$score}}/10
                         </div>
-                        <div style="text-align: center; margin-bottom: 15px;">
-                            <span style="font-size: 14px; opacity: 0.95; font-weight: 500;">{{$result}}</span>
+                    </div>
+                    <div style="text-align: center; margin-bottom: 15px;">
+                        <span style="font-size: 14px; opacity: 0.95; font-weight: 500;">{{$result}}</span>
+                    </div>
+                    {{if and $anxietyItem.Recommendation $anxietyItem.Recommendation.Recommendations}}
+                    <div
+                        style="background: rgba(255,255,255,0.15); padding: 15px; border-radius: 8px; margin-top: 15px;">
+                        <h5 style="margin: 0 0 10px 0; color: white; font-size: 14px; font-weight: 600;">💡
+                            Recommendations:</h5>
+                        <div style="font-size: 13px; line-height: 1.7; color: rgba(255,255,255,0.95);">
+                            {{$recs := $anxietyItem.Recommendation.Recommendations}}
+                            {{$cleanRecs := replace $recs "**" ""}}
+                            {{$cleanRecs = replace $cleanRecs "*" ""}}
+                            {{$cleanRecs = replace $cleanRecs "#" ""}}
+                            {{$cleanRecs = replace $cleanRecs "_" ""}}
+                            {{$cleanRecs = replace $cleanRecs "`" ""}}
+                            {{$cleanRecs}}
                         </div>
-                        {{if and $anxietyItem.Recommendation $anxietyItem.Recommendation.Recommendations}}
-                            <div style="background: rgba(255,255,255,0.15); padding: 15px; border-radius: 8px; margin-top: 15px;">
-                                <h5 style="margin: 0 0 10px 0; color: white; font-size: 14px; font-weight: 600;">💡 Recommendations:</h5>
-                                <div style="font-size: 13px; line-height: 1.7; color: rgba(255,255,255,0.95);">
-                                    {{$recs := $anxietyItem.Recommendation.Recommendations}}
-                                    {{$cleanRecs := replace $recs "**" ""}}
-                                    {{$cleanRecs = replace $cleanRecs "*" ""}}
-                                    {{$cleanRecs = replace $cleanRecs "#" ""}}
-                                    {{$cleanRecs = replace $cleanRecs "_" ""}}
-                                    {{$cleanRecs = replace $cleanRecs "`" ""}}
-                                    {{$cleanRecs}}
-                                </div>
-                            </div>
-                        {{end}}
+                    </div>
+                    {{end}}
                     {{else}}
-                        <p style="margin: 0; font-size: 14px; opacity: 0.8; text-align: center; padding: 20px;">Not completed yet</p>
+                    <p style="margin: 0; font-size: 14px; opacity: 0.8; text-align: center; padding: 20px;">Not
+                        completed yet</p>
                     {{end}}
                 </div>
-                
+
                 <!-- Wellness Check -->
-                <div style="background: rgba(255,255,255,0.2); padding: 20px; border-radius: 12px; backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.3);">
-                    <h4 style="margin: 0 0 15px 0; color: white; font-size: 18px; font-weight: 600;">💚 Wellness Check</h4>
+                <div
+                    style="background: rgba(255,255,255,0.2); padding: 20px; border-radius: 12px; backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.3);">
+                    <h4 style="margin: 0 0 15px 0; color: white; font-size: 18px; font-weight: 600;">💚 Wellness Check
+                    </h4>
                     {{if and $wellnessItem $wellnessItem.Response}}
-                        {{$score := $wellnessItem.Response.Score}}
-                        {{$result := $wellnessItem.Response.Result}}
-                        {{$scoreColor := "28a745"}}
-                        {{if le $score 4}}{{$scoreColor = "dc3545"}}{{else if le $score 6}}{{$scoreColor = "ffc107"}}{{end}}
-                        <div style="text-align: center; margin-bottom: 15px;">
-                            <div style="display: inline-block; background: #{{$scoreColor}}; color: white; padding: 12px 24px; border-radius: 25px; font-weight: bold; font-size: 24px; box-shadow: 0 4px 12px rgba(0,0,0,0.2);">
-                                Score: {{$score}}/10
-                            </div>
+                    {{$score := $wellnessItem.Response.Score}}
+                    {{$result := $wellnessItem.Response.Result}}
+                    {{$scoreColor := "28a745"}}
+                    {{if le $score 4}}{{$scoreColor = "dc3545"}}{{else if le $score 6}}{{$scoreColor = "ffc107"}}{{end}}
+                    <div style="text-align: center; margin-bottom: 15px;">
+                        <div
+                            style="display: inline-block; background: #{{$scoreColor}}; color: white; padding: 12px 24px; border-radius: 25px; font-weight: bold; font-size: 24px; box-shadow: 0 4px 12px rgba(0,0,0,0.2);">
+                            Score: {{$score}}/10
                         </div>
-                        <div style="text-align: center; margin-bottom: 15px;">
-                            <span style="font-size: 14px; opacity: 0.95; font-weight: 500;">{{$result}}</span>
+                    </div>
+                    <div style="text-align: center; margin-bottom: 15px;">
+                        <span style="font-size: 14px; opacity: 0.95; font-weight: 500;">{{$result}}</span>
+                    </div>
+                    {{if and $wellnessItem.Recommendation $wellnessItem.Recommendation.Recommendations}}
+                    <div
+                        style="background: rgba(255,255,255,0.15); padding: 15px; border-radius: 8px; margin-top: 15px;">
+                        <h5 style="margin: 0 0 10px 0; color: white; font-size: 14px; font-weight: 600;">💡
+                            Recommendations:</h5>
+                        <div style="font-size: 13px; line-height: 1.7; color: rgba(255,255,255,0.95);">
+                            {{$recs := $wellnessItem.Recommendation.Recommendations}}
+                            {{$cleanRecs := replace $recs "**" ""}}
+                            {{$cleanRecs = replace $cleanRecs "*" ""}}
+                            {{$cleanRecs = replace $cleanRecs "#" ""}}
+                            {{$cleanRecs = replace $cleanRecs "_" ""}}
+                            {{$cleanRecs = replace $cleanRecs "`" ""}}
+                            {{$cleanRecs}}
                         </div>
-                        {{if and $wellnessItem.Recommendation $wellnessItem.Recommendation.Recommendations}}
-                            <div style="background: rgba(255,255,255,0.15); padding: 15px; border-radius: 8px; margin-top: 15px;">
-                                <h5 style="margin: 0 0 10px 0; color: white; font-size: 14px; font-weight: 600;">💡 Recommendations:</h5>
-                                <div style="font-size: 13px; line-height: 1.7; color: rgba(255,255,255,0.95);">
-                                    {{$recs := $wellnessItem.Recommendation.Recommendations}}
-                                    {{$cleanRecs := replace $recs "**" ""}}
-                                    {{$cleanRecs = replace $cleanRecs "*" ""}}
-                                    {{$cleanRecs = replace $cleanRecs "#" ""}}
-                                    {{$cleanRecs = replace $cleanRecs "_" ""}}
-                                    {{$cleanRecs = replace $cleanRecs "`" ""}}
-                                    {{$cleanRecs}}
-                                </div>
-                            </div>
-                        {{end}}
+                    </div>
+                    {{end}}
                     {{else}}
-                        <p style="margin: 0; font-size: 14px; opacity: 0.8; text-align: center; padding: 20px;">Not completed yet</p>
+                    <p style="margin: 0; font-size: 14px; opacity: 0.8; text-align: center; padding: 20px;">Not
+                        completed yet</p>
                     {{end}}
                 </div>
             </div>
@@ -209,60 +240,64 @@
                 <h3>📊 Daily Mood Assessment</h3>
                 <p>Quick assessment to understand your current mood and emotional state</p>
                 {{if and .QuizHistory (index .QuizHistory "mood_assessment")}}
-                    {{$item := index .QuizHistory "mood_assessment"}}
-                    {{if $item.Response}}
-                        <div style="margin: 10px 0; padding: 10px; background: #f8f9fa; border-radius: 5px;">
-                            <strong>Last Score: {{$item.Response.Score}}/10</strong><br>
-                            <small style="color: #6c757d;">{{$item.Response.Result}}</small>
-                        </div>
-                    {{end}}
+                {{$item := index .QuizHistory "mood_assessment"}}
+                {{if $item.Response}}
+                <div style="margin: 10px 0; padding: 10px; background: #f8f9fa; border-radius: 5px;">
+                    <strong>Last Score: {{$item.Response.Score}}/10</strong><br>
+                    <small style="color: #6c757d;">{{$item.Response.Result}}</small>
+                </div>
                 {{end}}
-                <button onclick="loadQuiz('mood_assessment')" class="btn-primary">{{if and .QuizHistory (index .QuizHistory "mood_assessment")}}Retake Quiz{{else}}Start Quiz{{end}}</button>
+                {{end}}
+                <button onclick="loadQuiz('mood_assessment')" class="btn-primary">{{if and .QuizHistory (index
+                    .QuizHistory "mood_assessment")}}Retake Quiz{{else}}Start Quiz{{end}}</button>
             </div>
 
             <div class="card quiz-card">
                 <h3>😰 Stress Level Check</h3>
                 <p>Evaluate your current stress levels and identify potential stressors</p>
                 {{if and .QuizHistory (index .QuizHistory "stress_level")}}
-                    {{$item := index .QuizHistory "stress_level"}}
-                    {{if $item.Response}}
-                        <div style="margin: 10px 0; padding: 10px; background: #f8f9fa; border-radius: 5px;">
-                            <strong>Last Score: {{$item.Response.Score}}/10</strong><br>
-                            <small style="color: #6c757d;">{{$item.Response.Result}}</small>
-                        </div>
-                    {{end}}
+                {{$item := index .QuizHistory "stress_level"}}
+                {{if $item.Response}}
+                <div style="margin: 10px 0; padding: 10px; background: #f8f9fa; border-radius: 5px;">
+                    <strong>Last Score: {{$item.Response.Score}}/10</strong><br>
+                    <small style="color: #6c757d;">{{$item.Response.Result}}</small>
+                </div>
                 {{end}}
-                <button onclick="loadQuiz('stress_level')" class="btn-primary">{{if and .QuizHistory (index .QuizHistory "stress_level")}}Retake Quiz{{else}}Start Quiz{{end}}</button>
+                {{end}}
+                <button onclick="loadQuiz('stress_level')" class="btn-primary">{{if and .QuizHistory (index .QuizHistory
+                    "stress_level")}}Retake Quiz{{else}}Start Quiz{{end}}</button>
             </div>
 
             <div class="card quiz-card">
                 <h3>😟 Anxiety Check</h3>
                 <p>Assess your anxiety levels and get personalized recommendations</p>
                 {{if and .QuizHistory (index .QuizHistory "anxiety_check")}}
-                    {{$item := index .QuizHistory "anxiety_check"}}
-                    {{if $item.Response}}
-                        <div style="margin: 10px 0; padding: 10px; background: #f8f9fa; border-radius: 5px;">
-                            <strong>Last Score: {{$item.Response.Score}}/10</strong><br>
-                            <small style="color: #6c757d;">{{$item.Response.Result}}</small>
-                        </div>
-                    {{end}}
+                {{$item := index .QuizHistory "anxiety_check"}}
+                {{if $item.Response}}
+                <div style="margin: 10px 0; padding: 10px; background: #f8f9fa; border-radius: 5px;">
+                    <strong>Last Score: {{$item.Response.Score}}/10</strong><br>
+                    <small style="color: #6c757d;">{{$item.Response.Result}}</small>
+                </div>
                 {{end}}
-                <button onclick="loadQuiz('anxiety_check')" class="btn-primary">{{if and .QuizHistory (index .QuizHistory "anxiety_check")}}Retake Quiz{{else}}Start Quiz{{end}}</button>
+                {{end}}
+                <button onclick="loadQuiz('anxiety_check')" class="btn-primary">{{if and .QuizHistory (index
+                    .QuizHistory "anxiety_check")}}Retake Quiz{{else}}Start Quiz{{end}}</button>
             </div>
 
             <div class="card quiz-card">
                 <h3>💚 Wellness Check</h3>
                 <p>Comprehensive wellness assessment covering multiple aspects</p>
                 {{if and .QuizHistory (index .QuizHistory "wellness")}}
-                    {{$item := index .QuizHistory "wellness"}}
-                    {{if $item.Response}}
-                        <div style="margin: 10px 0; padding: 10px; background: #f8f9fa; border-radius: 5px;">
-                            <strong>Last Score: {{$item.Response.Score}}/10</strong><br>
-                            <small style="color: #6c757d;">{{$item.Response.Result}}</small>
-                        </div>
-                    {{end}}
+                {{$item := index .QuizHistory "wellness"}}
+                {{if $item.Response}}
+                <div style="margin: 10px 0; padding: 10px; background: #f8f9fa; border-radius: 5px;">
+                    <strong>Last Score: {{$item.Response.Score}}/10</strong><br>
+                    <small style="color: #6c757d;">{{$item.Response.Result}}</small>
+                </div>
                 {{end}}
-                <button onclick="loadQuiz('wellness')" class="btn-primary">{{if and .QuizHistory (index .QuizHistory "wellness")}}Retake Quiz{{else}}Start Quiz{{end}}</button>
+                {{end}}
+                <button onclick="loadQuiz('wellness')" class="btn-primary">{{if and .QuizHistory (index .QuizHistory
+                    "wellness")}}Retake Quiz{{else}}Start Quiz{{end}}</button>
             </div>
         </div>
 
@@ -273,11 +308,11 @@
 
     <script>
         // Mobile sidebar toggle
-        (function() {
+        (function () {
             const menuToggle = document.getElementById('menu-toggle');
             const sidebar = document.getElementById('mobile-sidebar');
             const overlay = document.getElementById('sidebar-overlay');
-            
+
             function toggleSidebar() {
                 const isActive = sidebar.classList.contains('active');
                 sidebar.classList.toggle('active');
@@ -285,36 +320,36 @@
                 menuToggle.classList.toggle('active');
                 document.body.classList.toggle('sidebar-open');
             }
-            
+
             if (menuToggle) {
                 menuToggle.addEventListener('click', toggleSidebar);
             }
-            
+
             if (overlay) {
                 overlay.addEventListener('click', toggleSidebar);
             }
-            
+
             // Close sidebar when clicking on a link
             const sidebarLinks = sidebar.querySelectorAll('.sidebar-nav a');
             sidebarLinks.forEach(link => {
-                link.addEventListener('click', function() {
+                link.addEventListener('click', function () {
                     if (!this.classList.contains('btn-secondary')) {
                         setTimeout(toggleSidebar, 300);
                     }
                 });
             });
         })();
-        
+
         function loadQuiz(type) {
             const container = document.getElementById('quiz-container');
             const content = document.getElementById('quiz-content');
-            
+
             container.style.display = 'block';
             content.innerHTML = '<div class="loading">Loading quiz...</div>';
-            
+
             // Scroll to quiz container
             container.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            
+
             // Make HTMX request with proper headers
             fetch('/api/quiz/' + type, {
                 method: 'GET',
@@ -324,46 +359,46 @@
                 },
                 credentials: 'include' // Include cookies for authentication
             })
-            .then(response => {
-                if (response.status === 401 || response.status === 403) {
-                    content.innerHTML = '<div class="error">Please log in to take quizzes.</div>';
-                    return;
-                }
-                if (!response.ok) {
-                    throw new Error('Failed to load quiz');
-                }
-                return response.text();
-            })
-            .then(html => {
-                if (html) {
-                    content.innerHTML = html;
-                    // Execute scripts only once - use eval to avoid redeclaration issues
-                    const scripts = content.querySelectorAll('script');
-                    scripts.forEach(oldScript => {
-                        try {
-                            // Use Function constructor to avoid variable redeclaration
-                            if (oldScript.textContent) {
-                                const scriptFunc = new Function(oldScript.textContent);
-                                scriptFunc();
+                .then(response => {
+                    if (response.status === 401 || response.status === 403) {
+                        content.innerHTML = '<div class="error">Please log in to take quizzes.</div>';
+                        return;
+                    }
+                    if (!response.ok) {
+                        throw new Error('Failed to load quiz');
+                    }
+                    return response.text();
+                })
+                .then(html => {
+                    if (html) {
+                        content.innerHTML = html;
+                        // Execute scripts only once - use eval to avoid redeclaration issues
+                        const scripts = content.querySelectorAll('script');
+                        scripts.forEach(oldScript => {
+                            try {
+                                // Use Function constructor to avoid variable redeclaration
+                                if (oldScript.textContent) {
+                                    const scriptFunc = new Function(oldScript.textContent);
+                                    scriptFunc();
+                                }
+                                // Remove the script tag after execution
+                                oldScript.parentNode.removeChild(oldScript);
+                            } catch (e) {
+                                console.error('Error executing script:', e);
                             }
-                            // Remove the script tag after execution
-                            oldScript.parentNode.removeChild(oldScript);
-                        } catch (e) {
-                            console.error('Error executing script:', e);
-                        }
-                    });
-                }
-            })
-            .catch(error => {
-                console.error('Error loading quiz:', error);
-                content.innerHTML = '<div class="error">Failed to load quiz. Please try again.</div>';
-            });
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading quiz:', error);
+                    content.innerHTML = '<div class="error">Failed to load quiz. Please try again.</div>';
+                });
         }
-        
+
         // Ensure submitQuiz is available globally (fallback)
         // This will be overridden by the quiz.html script when it loads
         if (typeof window.submitQuiz === 'undefined') {
-            window.submitQuiz = function(e) {
+            window.submitQuiz = function (e) {
                 console.error('submitQuiz not loaded yet. Please wait for quiz to fully load.');
                 if (e) {
                     e.preventDefault();
@@ -372,16 +407,16 @@
                 return false;
             };
         }
-        
+
         // Prevent any automatic page reloads
-        window.addEventListener('beforeunload', function(e) {
+        window.addEventListener('beforeunload', function (e) {
             // Don't prevent normal navigation, only accidental refreshes during quiz
         });
-        
+
         // Listen for quiz completion - but DON'T auto-reload
         // Results stay inline in the quiz container
         // User can manually refresh or navigate to see updated scores
-        
+
         // Also check if we're coming back from a quiz submission
         // by checking URL parameters or session storage
         if (sessionStorage.getItem('quiz-just-submitted') === 'true') {
@@ -394,5 +429,5 @@
         }
     </script>
 </body>
-</html>
 
+</html>

@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,10 +8,11 @@
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
     <link rel="stylesheet" href="/static/css/style.css">
 </head>
+
 <body>
     <!-- Mobile Sidebar Overlay -->
     <div class="sidebar-overlay" id="sidebar-overlay"></div>
-    
+
     <!-- Mobile Sidebar -->
     <div class="mobile-sidebar" id="mobile-sidebar">
         <div class="sidebar-header">
@@ -21,10 +23,11 @@
             <a href="/mood" class="active">😊 Mood Tracking</a>
             <a href="/quizzes">📝 Quizzes</a>
             <a href="/consultation">💬 Consultation</a>
+            <a href="/crisis" class="nav-crisis-link">🆘 Crisis Resources</a>
             <button hx-post="/logout" hx-target="body" class="btn-secondary">🚪 Logout</button>
         </nav>
     </div>
-    
+
     <nav class="navbar">
         <div class="container">
             <button class="menu-toggle" id="menu-toggle" aria-label="Toggle menu">
@@ -38,11 +41,12 @@
                 <a href="/mood">Mood Tracking</a>
                 <a href="/quizzes">Quizzes</a>
                 <a href="/consultation">Consultation</a>
+                <a href="/crisis" class="nav-crisis-link">🆘 Crisis Resources</a>
                 <button hx-post="/logout" hx-target="body" class="btn-secondary">Logout</button>
             </div>
         </div>
     </nav>
-    
+
     <main class="container">
         <div class="dashboard-header">
             <h1>Daily Mood Tracking</h1>
@@ -60,10 +64,8 @@
         <!-- Mood Entry Form -->
         <div class="card">
             <h2>How are you feeling today?</h2>
-            <form hx-post="/api/mood" 
-                  hx-target="#mood-result" 
-                  hx-swap="innerHTML"
-                  hx-on::after-request="if(event.detail.xhr.status === 200) { htmx.ajax('GET', '/api/mood/history', {target: '#mood-history', swap: 'innerHTML'}); htmx.ajax('GET', '/api/mood/quote', {target: '#daily-quote', swap: 'innerHTML'}); }">
+            <form hx-post="/api/mood" hx-target="#mood-result" hx-swap="innerHTML"
+                hx-on::after-request="if(event.detail.xhr.status === 200) { htmx.ajax('GET', '/api/mood/history', {target: '#mood-history', swap: 'innerHTML'}); htmx.ajax('GET', '/api/mood/quote', {target: '#daily-quote', swap: 'innerHTML'}); }">
                 <div class="form-group">
                     <label>Mood Type</label>
                     <select name="mood_type" required>
@@ -81,8 +83,8 @@
 
                 <div class="form-group">
                     <label>Mood Level (1-10)</label>
-                    <input type="range" name="score" min="1" max="10" value="5" 
-                           oninput="document.getElementById('score-display').textContent = this.value" required>
+                    <input type="range" name="score" min="1" max="10" value="5"
+                        oninput="document.getElementById('score-display').textContent = this.value" required>
                     <div class="score-display">
                         <span id="score-display">5</span>/10
                     </div>
@@ -109,11 +111,11 @@
 
     <script>
         // Mobile sidebar toggle
-        (function() {
+        (function () {
             const menuToggle = document.getElementById('menu-toggle');
             const sidebar = document.getElementById('mobile-sidebar');
             const overlay = document.getElementById('sidebar-overlay');
-            
+
             function toggleSidebar() {
                 const isActive = sidebar.classList.contains('active');
                 sidebar.classList.toggle('active');
@@ -121,19 +123,19 @@
                 menuToggle.classList.toggle('active');
                 document.body.classList.toggle('sidebar-open');
             }
-            
+
             if (menuToggle) {
                 menuToggle.addEventListener('click', toggleSidebar);
             }
-            
+
             if (overlay) {
                 overlay.addEventListener('click', toggleSidebar);
             }
-            
+
             // Close sidebar when clicking on a link
             const sidebarLinks = sidebar.querySelectorAll('.sidebar-nav a');
             sidebarLinks.forEach(link => {
-                link.addEventListener('click', function() {
+                link.addEventListener('click', function () {
                     // Don't close for logout button (handled by HTMX)
                     if (!this.classList.contains('btn-secondary')) {
                         setTimeout(toggleSidebar, 300);
@@ -141,9 +143,9 @@
                 });
             });
         })();
-        
+
         // Load quote and history on page load
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             htmx.ajax('GET', '/api/mood/quote', {
                 target: '#daily-quote',
                 swap: 'innerHTML'
@@ -155,5 +157,5 @@
         });
     </script>
 </body>
-</html>
 
+</html>

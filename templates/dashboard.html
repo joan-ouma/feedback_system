@@ -1,16 +1,223 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - Campus Mental Health Support</title>
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/static/css/style.css">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        .db-greeting {
+            margin-bottom: 2rem;
+        }
+
+        .db-greeting h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #1e1b4b;
+            margin-bottom: 0.25rem;
+        }
+
+        .db-greeting p {
+            color: #64748b;
+            font-size: 1rem;
+        }
+
+        /* Daily Tip Banner */
+        .db-tip {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 16px;
+            padding: 1.5rem 2rem;
+            color: white;
+            margin-bottom: 2rem;
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+        }
+
+        .db-tip-icon {
+            font-size: 1.75rem;
+            flex-shrink: 0;
+            margin-top: 0.1rem;
+        }
+
+        .db-tip-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            opacity: 0.8;
+            margin-bottom: 0.3rem;
+        }
+
+        .db-tip-text {
+            font-size: 1rem;
+            line-height: 1.6;
+            opacity: 0.95;
+        }
+
+        /* Feature Cards */
+        .db-section-label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.07em;
+            color: #94a3b8;
+            margin-bottom: 1rem;
+        }
+
+        .db-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 1.25rem;
+            margin-bottom: 2.5rem;
+        }
+
+        .db-card {
+            background: white;
+            border-radius: 16px;
+            padding: 1.5rem;
+            text-decoration: none;
+            color: inherit;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+            transition: all 0.22s ease;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .db-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+            border-color: transparent;
+        }
+
+        .db-card-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .db-card-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+        }
+
+        .db-card-arrow {
+            color: #cbd5e1;
+            font-size: 1.2rem;
+            transition: transform 0.2s ease, color 0.2s ease;
+        }
+
+        .db-card:hover .db-card-arrow {
+            transform: translateX(4px);
+            color: #667eea;
+        }
+
+        .db-card h3 {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #1e293b;
+            margin: 0;
+        }
+
+        .db-card p {
+            font-size: 0.875rem;
+            color: #64748b;
+            line-height: 1.5;
+            margin: 0;
+        }
+
+        .db-card-badge {
+            font-size: 0.7rem;
+            font-weight: 600;
+            padding: 0.2rem 0.55rem;
+            border-radius: 999px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .badge-green {
+            background: #dcfce7;
+            color: #16a34a;
+        }
+
+        .badge-blue {
+            background: #dbeafe;
+            color: #2563eb;
+        }
+
+        .badge-purple {
+            background: #ede9fe;
+            color: #7c3aed;
+        }
+
+        /* Quiz summary */
+        .db-quiz-summary {
+            background: white;
+            border-radius: 16px;
+            border: 1px solid #e2e8f0;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .db-quiz-summary h2 {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 1rem;
+        }
+
+        .db-scores {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .db-score-pill {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            border-radius: 999px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #374151;
+        }
+
+        @media (max-width: 640px) {
+            .db-greeting h1 {
+                font-size: 1.5rem;
+            }
+
+            .db-tip {
+                padding: 1.25rem;
+            }
+
+            .db-cards {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
 </head>
+
 <body>
     <!-- Mobile Sidebar Overlay -->
     <div class="sidebar-overlay" id="sidebar-overlay"></div>
-    
     <!-- Mobile Sidebar -->
     <div class="mobile-sidebar" id="mobile-sidebar">
         <div class="sidebar-header">
@@ -21,16 +228,15 @@
             <a href="/mood">😊 Mood Tracking</a>
             <a href="/quizzes">📝 Quizzes</a>
             <a href="/consultation">💬 Consultation</a>
+            <a href="/crisis" class="nav-crisis-link">🆘 Crisis Resources</a>
             <button hx-post="/logout" hx-target="body" class="btn-secondary">🚪 Logout</button>
         </nav>
     </div>
-    
+
     <nav class="navbar">
         <div class="container">
             <button class="menu-toggle" id="menu-toggle" aria-label="Toggle menu">
-                <span></span>
-                <span></span>
-                <span></span>
+                <span></span><span></span><span></span>
             </button>
             <a href="/dashboard" class="logo">Campus Support</a>
             <div class="nav-links">
@@ -38,234 +244,150 @@
                 <a href="/mood">Mood Tracking</a>
                 <a href="/quizzes">Quizzes</a>
                 <a href="/consultation">Consultation</a>
+                <a href="/crisis" class="nav-crisis-link">🆘 Crisis Resources</a>
                 <button hx-post="/logout" hx-target="body" class="btn-secondary">Logout</button>
             </div>
         </div>
     </nav>
-    
-    <main class="container">
-        <div class="dashboard-header">
-            <h1>Your Dashboard</h1>
-            <p>Submit anonymous feedback or consult with our AI counselor</p>
+
+    <main class="container" style="padding-top: 1.75rem; padding-bottom: 4rem;">
+
+        <!-- Greeting -->
+        <div class="db-greeting">
+            <h1 id="greeting-text">Hello 👋</h1>
+            <p>This is your private space, anonymous, safe, and always here for you.</p>
         </div>
-        
-        <!-- Quiz Results Summary on Dashboard -->
+
+        <!-- Daily Mental Health Tip -->
+        <div class="db-tip">
+            <div class="db-tip-icon">💡</div>
+            <div>
+                <div class="db-tip-label">Today's Mental Health Tip</div>
+                <div class="db-tip-text" id="daily-tip">Loading your daily tip...</div>
+            </div>
+        </div>
+
+        <!-- Quiz results (only if available) -->
         {{if .QuizHistory}}
-        <div class="card" style="margin-bottom: 30px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 25px; box-shadow: 0 8px 24px rgba(102,126,234,0.3);">
-            <h2 style="margin-top: 0; color: white; margin-bottom: 20px; font-size: 24px; text-align: center;">📊 Your Mental Health Assessment Results</h2>
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px;">
-                {{$moodItem := index .QuizHistory "mood_assessment"}}
-                {{$stressItem := index .QuizHistory "stress_level"}}
-                {{$anxietyItem := index .QuizHistory "anxiety_check"}}
-                {{$wellnessItem := index .QuizHistory "wellness"}}
-                
-                {{if or (and $moodItem $moodItem.Response) (and $stressItem $stressItem.Response) (and $anxietyItem $anxietyItem.Response) (and $wellnessItem $wellnessItem.Response)}}
-                    {{if and $moodItem $moodItem.Response}}
-                        <div style="background: rgba(255,255,255,0.2); padding: 15px; border-radius: 10px; backdrop-filter: blur(10px);">
-                            <h4 style="margin: 0 0 10px 0; color: white; font-size: 16px;">📊 Mood</h4>
-                            {{$score := $moodItem.Response.Score}}
-                            {{$scoreColor := "28a745"}}
-                            {{if le $score 4}}{{$scoreColor = "dc3545"}}{{else if le $score 6}}{{$scoreColor = "ffc107"}}{{end}}
-                            <div style="text-align: center; margin-bottom: 10px;">
-                                <span style="background: #{{$scoreColor}}; color: white; padding: 8px 16px; border-radius: 20px; font-weight: bold; font-size: 20px;">{{$score}}/10</span>
-                            </div>
-                            {{if and $moodItem.Recommendation $moodItem.Recommendation.Recommendations}}
-                                <div style="font-size: 12px; line-height: 1.6; color: rgba(255,255,255,0.95);">
-                                    {{$recs := $moodItem.Recommendation.Recommendations}}
-                                    {{$cleanRecs := replace $recs "**" ""}}
-                                    {{$cleanRecs = replace $cleanRecs "*" ""}}
-                                    {{$cleanRecs}}
-                                </div>
-                            {{end}}
-                        </div>
-                    {{end}}
-                    
-                    {{if and $stressItem $stressItem.Response}}
-                        <div style="background: rgba(255,255,255,0.2); padding: 15px; border-radius: 10px; backdrop-filter: blur(10px);">
-                            <h4 style="margin: 0 0 10px 0; color: white; font-size: 16px;">😰 Stress</h4>
-                            {{$score := $stressItem.Response.Score}}
-                            {{$scoreColor := "28a745"}}
-                            {{if le $score 4}}{{$scoreColor = "dc3545"}}{{else if le $score 6}}{{$scoreColor = "ffc107"}}{{end}}
-                            <div style="text-align: center; margin-bottom: 10px;">
-                                <span style="background: #{{$scoreColor}}; color: white; padding: 8px 16px; border-radius: 20px; font-weight: bold; font-size: 20px;">{{$score}}/10</span>
-                            </div>
-                            {{if and $stressItem.Recommendation $stressItem.Recommendation.Recommendations}}
-                                <div style="font-size: 12px; line-height: 1.6; color: rgba(255,255,255,0.95);">
-                                    {{$recs := $stressItem.Recommendation.Recommendations}}
-                                    {{$cleanRecs := replace $recs "**" ""}}
-                                    {{$cleanRecs = replace $cleanRecs "*" ""}}
-                                    {{$cleanRecs}}
-                                </div>
-                            {{end}}
-                        </div>
-                    {{end}}
-                    
-                    {{if and $anxietyItem $anxietyItem.Response}}
-                        <div style="background: rgba(255,255,255,0.2); padding: 15px; border-radius: 10px; backdrop-filter: blur(10px);">
-                            <h4 style="margin: 0 0 10px 0; color: white; font-size: 16px;">😟 Anxiety</h4>
-                            {{$score := $anxietyItem.Response.Score}}
-                            {{$scoreColor := "28a745"}}
-                            {{if le $score 4}}{{$scoreColor = "dc3545"}}{{else if le $score 6}}{{$scoreColor = "ffc107"}}{{end}}
-                            <div style="text-align: center; margin-bottom: 10px;">
-                                <span style="background: #{{$scoreColor}}; color: white; padding: 8px 16px; border-radius: 20px; font-weight: bold; font-size: 20px;">{{$score}}/10</span>
-                            </div>
-                            {{if and $anxietyItem.Recommendation $anxietyItem.Recommendation.Recommendations}}
-                                <div style="font-size: 12px; line-height: 1.6; color: rgba(255,255,255,0.95);">
-                                    {{$recs := $anxietyItem.Recommendation.Recommendations}}
-                                    {{$cleanRecs := replace $recs "**" ""}}
-                                    {{$cleanRecs = replace $cleanRecs "*" ""}}
-                                    {{$cleanRecs}}
-                                </div>
-                            {{end}}
-                        </div>
-                    {{end}}
-                    
-                    {{if and $wellnessItem $wellnessItem.Response}}
-                        <div style="background: rgba(255,255,255,0.2); padding: 15px; border-radius: 10px; backdrop-filter: blur(10px);">
-                            <h4 style="margin: 0 0 10px 0; color: white; font-size: 16px;">💚 Wellness</h4>
-                            {{$score := $wellnessItem.Response.Score}}
-                            {{$scoreColor := "28a745"}}
-                            {{if le $score 4}}{{$scoreColor = "dc3545"}}{{else if le $score 6}}{{$scoreColor = "ffc107"}}{{end}}
-                            <div style="text-align: center; margin-bottom: 10px;">
-                                <span style="background: #{{$scoreColor}}; color: white; padding: 8px 16px; border-radius: 20px; font-weight: bold; font-size: 20px;">{{$score}}/10</span>
-                            </div>
-                            {{if and $wellnessItem.Recommendation $wellnessItem.Recommendation.Recommendations}}
-                                <div style="font-size: 12px; line-height: 1.6; color: rgba(255,255,255,0.95);">
-                                    {{$recs := $wellnessItem.Recommendation.Recommendations}}
-                                    {{$cleanRecs := replace $recs "**" ""}}
-                                    {{$cleanRecs = replace $cleanRecs "*" ""}}
-                                    {{$cleanRecs}}
-                                </div>
-                            {{end}}
-                        </div>
-                    {{end}}
-                {{else}}
-                    <div style="grid-column: 1 / -1; text-align: center; padding: 20px;">
-                        <p style="margin: 0; opacity: 0.9;">Complete quizzes to see your mental health assessment results here</p>
-                        <a href="/quizzes" class="btn-primary" style="margin-top: 15px; display: inline-block; background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3);">Take a Quiz</a>
-                    </div>
+        {{$moodItem := index .QuizHistory "mood_assessment"}}
+        {{$stressItem := index .QuizHistory "stress_level"}}
+        {{$anxietyItem := index .QuizHistory "anxiety_check"}}
+        {{$wellnessItem := index .QuizHistory "wellness"}}
+        {{if or (and $moodItem $moodItem.Response) (and $stressItem $stressItem.Response) (and $anxietyItem
+        $anxietyItem.Response) (and $wellnessItem $wellnessItem.Response)}}
+        <div class="db-quiz-summary">
+            <h2>📊 Your Latest Assessment Scores</h2>
+            <div class="db-scores">
+                {{if and $moodItem $moodItem.Response}}
+                <div class="db-score-pill">😊 Mood &nbsp;<strong>{{$moodItem.Response.Score}}/10</strong></div>
+                {{end}}
+                {{if and $stressItem $stressItem.Response}}
+                <div class="db-score-pill">😰 Stress &nbsp;<strong>{{$stressItem.Response.Score}}/10</strong></div>
+                {{end}}
+                {{if and $anxietyItem $anxietyItem.Response}}
+                <div class="db-score-pill">😟 Anxiety &nbsp;<strong>{{$anxietyItem.Response.Score}}/10</strong></div>
+                {{end}}
+                {{if and $wellnessItem $wellnessItem.Response}}
+                <div class="db-score-pill">💚 Wellness &nbsp;<strong>{{$wellnessItem.Response.Score}}/10</strong></div>
                 {{end}}
             </div>
         </div>
         {{end}}
-        
-        <div class="dashboard-grid">
-            <div class="card">
-                <h2>Submit Feedback</h2>
-                <form hx-post="/api/feedback" 
-                      hx-target="#feedback-result" 
-                      hx-swap="innerHTML"
-                      hx-on::after-request="if(event.detail.xhr.status === 200) { this.reset(); htmx.ajax('GET', '/api/feedback', {target: '#feedbacks-list', swap: 'innerHTML'}); }">
-                    <div class="form-group">
-                        <label for="feedback-type">Type</label>
-                        <select id="feedback-type" name="type" required>
-                            <option value="general">General</option>
-                            <option value="mental_health">Mental Health</option>
-                            <option value="campus">Campus Issue</option>
-                            <option value="other">Other</option>
-                        </select>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="feedback-title">Title</label>
-                        <input type="text" id="feedback-title" name="title" required>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="feedback-content">Content</label>
-                        <textarea id="feedback-content" name="content" rows="5" required></textarea>
-                    </div>
-                    
-                    <button type="submit" class="btn-primary">Submit Feedback</button>
-                </form>
-                <div id="feedback-result"></div>
-            </div>
-            
-            <div class="card">
-                <h2>My Feedbacks</h2>
-                <div id="feedbacks-list">
-                    <div class="loading">Loading your feedbacks...</div>
+        {{end}}
+
+        <!-- Feature Cards -->
+        <div class="db-section-label">What would you like to do?</div>
+        <div class="db-cards">
+
+            <a href="/mood" class="db-card">
+                <div class="db-card-top">
+                    <div class="db-card-icon" style="background:#fdf4ff;">😊</div>
+                    <span class="db-card-arrow">→</span>
                 </div>
-            </div>
+                <div>
+                    <h3>Mood Tracking</h3>
+                    <p>Log how you're feeling today and track emotional patterns over time.</p>
+                </div>
+                <span class="db-card-badge badge-purple">Daily Check-in</span>
+            </a>
+
+            <a href="/quizzes" class="db-card">
+                <div class="db-card-top">
+                    <div class="db-card-icon" style="background:#eff6ff;">📝</div>
+                    <span class="db-card-arrow">→</span>
+                </div>
+                <div>
+                    <h3>Mental Health Quizzes</h3>
+                    <p>Reflect on your stress, anxiety, and wellness with short guided assessments.</p>
+                </div>
+                <span class="db-card-badge badge-blue">Self-Assessment</span>
+            </a>
+
+            <a href="/consultation" class="db-card">
+                <div class="db-card-top">
+                    <div class="db-card-icon" style="background:#f0fdf4;">💬</div>
+                    <span class="db-card-arrow">→</span>
+                </div>
+                <div>
+                    <h3>AI Consultation</h3>
+                    <p>Talk to our anonymous AI counselor anytime, no judgment, no identity.</p>
+                </div>
+                <span class="db-card-badge badge-green">Available 24/7</span>
+            </a>
+
         </div>
-        
-        <div class="card">
-            <h2>Quick Actions</h2>
-            <div class="action-buttons">
-                <a href="/mood" class="btn-primary">Track My Mood</a>
-                <a href="/quizzes" class="btn-primary">Take a Quiz</a>
-                <a href="/consultation" class="btn-primary">Start Consultation</a>
-                <button onclick="saveToken()" class="btn-secondary">Save My Token</button>
-            </div>
-        </div>
+
     </main>
-    
+
     <script>
-        // Mobile sidebar toggle
-        (function() {
+        // Time-based greeting
+        (function () {
+            const hour = new Date().getHours();
+            let greeting = 'Good evening 🌙';
+            if (hour >= 5 && hour < 12) greeting = 'Good morning ☀️';
+            else if (hour >= 12 && hour < 17) greeting = 'Good afternoon 🌤️';
+            document.getElementById('greeting-text').textContent = greeting;
+        })();
+
+        // Rotating daily tips
+        const tips = [
+            "Taking 5 slow, deep breaths can activate your parasympathetic nervous system and reduce anxiety almost instantly.",
+            "It's okay not to be okay. Acknowledging your feelings rather than suppressing them is the first step to healing.",
+            "Short walks — even just 10 minutes — have been shown to significantly improve mood and reduce stress hormones.",
+            "Journaling for 5 minutes a day can help you process emotions and spot patterns in your mental wellbeing.",
+            "Sleep is one of the most powerful tools for mental health. Protect your bedtime routine like it matters — because it does.",
+            "You don't have to solve everything today. Breaking challenges into tiny, manageable steps reduces overwhelm.",
+            "Talking to someone — a friend, counselor, or even an AI — is a sign of strength, not weakness.",
+            "Limiting social media before bed can dramatically improve sleep quality and morning mood.",
+            "Hydration and nutrition directly impact brain chemistry. A glass of water can sometimes be the first step.",
+            "Self-compassion means treating yourself with the same kindness you'd offer a good friend going through a hard time."
+        ];
+        // Pick a tip based on day of year for consistency across page loads
+        const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0)) / 86400000);
+        document.getElementById('daily-tip').textContent = tips[dayOfYear % tips.length];
+
+        // Mobile sidebar
+        (function () {
             const menuToggle = document.getElementById('menu-toggle');
             const sidebar = document.getElementById('mobile-sidebar');
             const overlay = document.getElementById('sidebar-overlay');
-            
             function toggleSidebar() {
-                const isActive = sidebar.classList.contains('active');
                 sidebar.classList.toggle('active');
                 overlay.classList.toggle('active');
                 menuToggle.classList.toggle('active');
                 document.body.classList.toggle('sidebar-open');
             }
-            
-            if (menuToggle) {
-                menuToggle.addEventListener('click', toggleSidebar);
-            }
-            
-            if (overlay) {
-                overlay.addEventListener('click', toggleSidebar);
-            }
-            
-            // Close sidebar when clicking on a link
+            if (menuToggle) menuToggle.addEventListener('click', toggleSidebar);
+            if (overlay) overlay.addEventListener('click', toggleSidebar);
             if (sidebar) {
-                const sidebarLinks = sidebar.querySelectorAll('.sidebar-nav a');
-                sidebarLinks.forEach(link => {
-                    link.addEventListener('click', function() {
-                        if (!this.classList.contains('btn-secondary')) {
-                            setTimeout(toggleSidebar, 300);
-                        }
+                sidebar.querySelectorAll('.sidebar-nav a').forEach(link => {
+                    link.addEventListener('click', function () {
+                        if (!this.classList.contains('btn-secondary')) setTimeout(toggleSidebar, 300);
                     });
                 });
             }
         })();
-        
-        // Load feedbacks on page load using HTMX
-        document.body.addEventListener('htmx:load', function() {
-            htmx.ajax('GET', '/api/feedback', {
-                target: '#feedbacks-list',
-                swap: 'innerHTML'
-            });
-        });
-        
-        // Trigger load on page ready
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', function() {
-                htmx.ajax('GET', '/api/feedback', {
-                    target: '#feedbacks-list',
-                    swap: 'innerHTML'
-                });
-                // Load quiz results summary
-                loadQuizResultsSummary();
-            });
-        } else {
-            htmx.ajax('GET', '/api/feedback', {
-                target: '#feedbacks-list',
-                swap: 'innerHTML'
-            });
-            loadQuizResultsSummary();
-        }
-        
-        function saveToken() {
-            alert('Your token is saved in your session. Make sure to save it securely if you want to access your account from another device.');
-        }
     </script>
 </body>
-</html>
 
+</html>

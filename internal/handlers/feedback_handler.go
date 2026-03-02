@@ -258,8 +258,20 @@ func (h *FeedbackHandler) Dashboard(w http.ResponseWriter, r *http.Request) {
 	http.ServeFile(w, r, "templates/dashboard.html")
 }
 
+// CrisisResources serves the dedicated crisis resources page
+func (h *FeedbackHandler) CrisisResources(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/html")
+	if h.templates != nil {
+		if err := h.templates.ExecuteTemplate(w, "crisis.html", nil); err == nil {
+			return
+		}
+	}
+	http.ServeFile(w, r, "templates/crisis.html")
+}
+
 func (h *FeedbackHandler) RegisterRoutes(router *mux.Router) {
 	router.HandleFunc("/dashboard", h.Dashboard).Methods("GET")
+	router.HandleFunc("/crisis", h.CrisisResources).Methods("GET")
 	router.HandleFunc("/api/feedback", h.SubmitFeedback).Methods("POST")
 	router.HandleFunc("/api/feedback", h.GetFeedbacks).Methods("GET")
 	router.HandleFunc("/api/feedback/{id}", h.GetFeedback).Methods("GET")

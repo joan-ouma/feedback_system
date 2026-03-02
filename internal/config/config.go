@@ -21,7 +21,7 @@ type DatabaseConfig struct {
 }
 
 type ServerConfig struct {
-	Port         string
+	Port          string
 	SessionSecret string
 }
 
@@ -61,12 +61,12 @@ func Load() (*Config, error) {
 		},
 		Server: ServerConfig{
 			Port:          getEnv("PORT", "8080"),
-			SessionSecret: getEnv("SESSION_SECRET", "change-me-in-production"),
+			SessionSecret: getEnv("JWT_SECRET", "change-me-in-production"),
 		},
 		LLM: LLMConfig{
 			APIURL: getEnv("LLM_API_URL", getEnv("GEMINI_API_URL", "https://generativelanguage.googleapis.com/v1beta")), // Default to Gemini API
-			APIKey: getEnv("LLM_API_KEY", getEnv("GEMINI_API_KEY", "")), // Only API key needed
-			Model:  "", // Model not used - hardcoded in client
+			APIKey: getEnv("LLM_API_KEY", getEnv("GEMINI_API_KEY", "")),                                                 // Only API key needed
+			Model:  "",                                                                                                  // Model not used - hardcoded in client
 		},
 		OpenTelemetry: OpenTelemetryConfig{
 			JaegerEndpoint: getEnv("JAEGER_ENDPOINT", "http://localhost:14268/api/traces"),
@@ -103,7 +103,7 @@ func maskURI(uri string) string {
 	if idx := strings.Index(uri, "@"); idx > 0 {
 		if userPassIdx := strings.Index(uri, "://"); userPassIdx > 0 {
 			prefix := uri[:userPassIdx+3]
-			userPass := uri[userPassIdx+3:idx]
+			userPass := uri[userPassIdx+3 : idx]
 			if colonIdx := strings.Index(userPass, ":"); colonIdx > 0 {
 				user := userPass[:colonIdx]
 				return prefix + user + ":***@" + uri[idx+1:]
@@ -112,4 +112,3 @@ func maskURI(uri string) string {
 	}
 	return uri
 }
-

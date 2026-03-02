@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -14,6 +15,7 @@
             max-width: 900px;
             margin: 0 auto;
         }
+
         .chat-messages {
             flex: 1;
             overflow-y: auto;
@@ -22,8 +24,9 @@
             backdrop-filter: blur(10px);
             border-radius: 16px;
             margin-bottom: 20px;
-            box-shadow: inset 0 2px 10px rgba(0,0,0,0.05);
+            box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.05);
         }
+
         .message {
             margin-bottom: 20px;
             padding: 16px 20px;
@@ -33,16 +36,19 @@
             word-wrap: break-word;
             line-height: 1.6;
         }
+
         @keyframes slideIn {
             from {
                 opacity: 0;
                 transform: translateY(10px);
             }
+
             to {
                 opacity: 1;
                 transform: translateY(0);
             }
         }
+
         .message.user {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
@@ -50,12 +56,14 @@
             text-align: left;
             box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
         }
+
         .message.assistant {
             background: rgba(255, 255, 255, 0.95);
             color: #1a1a1a;
-            border: 1px solid rgba(0,0,0,0.08);
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
         }
+
         .message strong {
             display: block;
             margin-bottom: 8px;
@@ -63,32 +71,41 @@
             opacity: 0.9;
             font-weight: 600;
         }
+
         .message.assistant strong {
             color: #667eea;
         }
+
         .message-content {
             margin-top: 8px;
         }
+
         .message-content p {
             margin: 0.5rem 0;
         }
-        .message-content ul, .message-content ol {
+
+        .message-content ul,
+        .message-content ol {
             margin: 0.5rem 0;
             padding-left: 1.5rem;
         }
+
         .message-content li {
             margin: 0.25rem 0;
         }
+
         .message-content code {
-            background: rgba(0,0,0,0.1);
+            background: rgba(0, 0, 0, 0.1);
             padding: 2px 6px;
             border-radius: 4px;
             font-family: 'Courier New', monospace;
             font-size: 0.9em;
         }
+
         .message.user code {
-            background: rgba(255,255,255,0.2);
+            background: rgba(255, 255, 255, 0.2);
         }
+
         .chat-input-container {
             display: flex;
             gap: 12px;
@@ -96,8 +113,9 @@
             backdrop-filter: blur(10px);
             padding: 16px;
             border-radius: 16px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
         }
+
         .chat-input {
             flex: 1;
             padding: 14px 18px;
@@ -107,11 +125,13 @@
             transition: all 0.3s ease;
             background: white;
         }
+
         .chat-input:focus {
             outline: none;
             border-color: #667eea;
             box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
         }
+
         .send-btn {
             padding: 14px 28px;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -123,31 +143,36 @@
             box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
             transition: all 0.3s ease;
         }
+
         .send-btn:hover:not(:disabled) {
             transform: translateY(-2px);
             box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
         }
+
         .send-btn:disabled {
             background: #ccc;
             cursor: not-allowed;
             box-shadow: none;
             transform: none;
         }
+
         .loading {
             display: none;
             padding: 16px 20px;
             background: rgba(255, 255, 255, 0.95);
-            border: 1px solid rgba(0,0,0,0.08);
+            border: 1px solid rgba(0, 0, 0, 0.08);
             border-radius: 16px;
             margin-bottom: 15px;
             max-width: 80%;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
         }
+
         .loading.show {
             display: flex;
             align-items: center;
             gap: 12px;
         }
+
         .spinner {
             border: 3px solid rgba(102, 126, 234, 0.2);
             border-top: 3px solid #667eea;
@@ -156,14 +181,22 @@
             height: 24px;
             animation: spin 0.8s linear infinite;
         }
+
         @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
         }
+
         .chat-header {
             text-align: center;
             margin-bottom: 2rem;
         }
+
         .chat-header h1 {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             -webkit-background-clip: text;
@@ -171,6 +204,7 @@
             background-clip: text;
             margin-bottom: 0.5rem;
         }
+
         .subtitle {
             color: #666;
             font-size: 1rem;
@@ -178,10 +212,11 @@
     </style>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 </head>
+
 <body>
     <!-- Mobile Sidebar Overlay -->
     <div class="sidebar-overlay" id="sidebar-overlay"></div>
-    
+
     <!-- Mobile Sidebar -->
     <div class="mobile-sidebar" id="mobile-sidebar">
         <div class="sidebar-header">
@@ -192,10 +227,11 @@
             <a href="/mood">😊 Mood Tracking</a>
             <a href="/quizzes">📝 Quizzes</a>
             <a href="/consultation" class="active">💬 Consultation</a>
+            <a href="/crisis" class="nav-crisis-link">🆘 Crisis Resources</a>
             <button hx-post="/logout" hx-target="body" class="btn-secondary">🚪 Logout</button>
         </nav>
     </div>
-    
+
     <nav class="navbar">
         <div class="container">
             <button class="menu-toggle" id="menu-toggle" aria-label="Toggle menu">
@@ -209,46 +245,50 @@
                 <a href="/mood">Mood Tracking</a>
                 <a href="/quizzes">Quizzes</a>
                 <a href="/consultation">Consultation</a>
+                <a href="/crisis" class="nav-crisis-link">🆘 Crisis Resources</a>
                 <button hx-post="/logout" hx-target="body" class="btn-secondary">Logout</button>
             </div>
         </div>
     </nav>
-    
+
     <main class="container">
         <div class="chat-container">
             <div class="chat-header">
                 <h1>Mental Health Consultation</h1>
-                <p class="subtitle">Chat anonymously with our AI counselor. All conversations are private and anonymous.</p>
+                <p class="subtitle">Chat anonymously with our AI counselor. All conversations are private and anonymous.
+                </p>
             </div>
-            
+
             <div id="chat-messages" class="chat-messages">
                 <div class="message assistant">
                     <strong>Counselor:</strong>
-                    <div class="message-content">Hello! I'm here to support you. How are you feeling today? You can share anything that's on your mind, and I'll do my best to help.</div>
+                    <div class="message-content">Hello! I'm here to support you. How are you feeling today? You can
+                        share anything that's on your mind, and I'll do my best to help.</div>
                 </div>
                 <div id="loading-indicator" class="loading">
                     <div class="spinner"></div>
                     <span>Counselor is typing...</span>
                 </div>
             </div>
-            
+
             <form id="chat-form">
                 <input type="hidden" id="session-id" name="session_id" value="">
                 <div class="chat-input-container">
-                    <input type="text" id="message-input" name="message" class="chat-input" placeholder="Type your message..." required>
+                    <input type="text" id="message-input" name="message" class="chat-input"
+                        placeholder="Type your message..." required>
                     <button type="submit" class="send-btn">Send</button>
                 </div>
             </form>
         </div>
     </main>
-    
+
     <script>
         // Mobile sidebar toggle
-        (function() {
+        (function () {
             const menuToggle = document.getElementById('menu-toggle');
             const sidebar = document.getElementById('mobile-sidebar');
             const overlay = document.getElementById('sidebar-overlay');
-            
+
             function toggleSidebar() {
                 const isActive = sidebar.classList.contains('active');
                 sidebar.classList.toggle('active');
@@ -256,20 +296,20 @@
                 menuToggle.classList.toggle('active');
                 document.body.classList.toggle('sidebar-open');
             }
-            
+
             if (menuToggle) {
                 menuToggle.addEventListener('click', toggleSidebar);
             }
-            
+
             if (overlay) {
                 overlay.addEventListener('click', toggleSidebar);
             }
-            
+
             // Close sidebar when clicking on a link
             if (sidebar) {
                 const sidebarLinks = sidebar.querySelectorAll('.sidebar-nav a');
                 sidebarLinks.forEach(link => {
-                    link.addEventListener('click', function() {
+                    link.addEventListener('click', function () {
                         if (!this.classList.contains('btn-secondary')) {
                             setTimeout(toggleSidebar, 300);
                         }
@@ -277,69 +317,69 @@
                 });
             }
         })();
-        
+
         let sessionId = null;
-        
+
         // Start a new session on page load
-        window.addEventListener('DOMContentLoaded', function() {
+        window.addEventListener('DOMContentLoaded', function () {
             fetch('/api/consultation/session', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
             })
-            .then(response => response.json())
-            .then(data => {
-                sessionId = data.id;
-                document.getElementById('session-id').value = sessionId;
-            })
-            .catch(error => {
-                console.error('Error starting session:', error);
-            });
+                .then(response => response.json())
+                .then(data => {
+                    sessionId = data.id;
+                    document.getElementById('session-id').value = sessionId;
+                })
+                .catch(error => {
+                    console.error('Error starting session:', error);
+                });
         });
-        
+
         // Handle message submission
-        document.getElementById('chat-form').addEventListener('submit', function(e) {
+        document.getElementById('chat-form').addEventListener('submit', function (e) {
             e.preventDefault();
             const messageInput = document.getElementById('message-input');
             const sendBtn = document.querySelector('.send-btn');
             const message = messageInput.value.trim();
-            
+
             if (!message) return;
-            
+
             // Disable input and button
             messageInput.disabled = true;
             sendBtn.disabled = true;
-            
+
             // Show loading indicator
             document.getElementById('loading-indicator').classList.add('show');
-            
+
             // Store message before clearing input
             const messageToSend = message;
             const sessionIdValue = document.getElementById('session-id').value;
-            
+
             // Add user message to chat
             const userMessageDiv = document.createElement('div');
             userMessageDiv.className = 'message user';
             userMessageDiv.innerHTML = `<strong>You:</strong><div class="message-content">${escapeHtml(messageToSend)}</div>`;
             document.getElementById('chat-messages').appendChild(userMessageDiv);
-            
+
             // Clear input
             messageInput.value = '';
-            
+
             // Scroll to bottom
             const chatMessages = document.getElementById('chat-messages');
             chatMessages.scrollTop = chatMessages.scrollHeight;
-            
+
             // Send message via fetch API using URLSearchParams for better compatibility
             const formData = new URLSearchParams();
             formData.append('message', messageToSend);
             if (sessionIdValue) {
                 formData.append('session_id', sessionIdValue);
             }
-            
+
             console.log('Sending message:', messageToSend, 'Session ID:', sessionIdValue);
-            
+
             fetch('/api/consultation/message', {
                 method: 'POST',
                 body: formData,
@@ -348,124 +388,124 @@
                     'Content-Type': 'application/x-www-form-urlencoded',
                 },
             })
-            .then(response => {
-                if (!response.ok) {
-                    return response.json().then(err => Promise.reject(err));
-                }
-                return response.json();
-            })
-            .then(data => {
-                // Hide loading indicator
-                document.getElementById('loading-indicator').classList.remove('show');
-                
-                // Re-enable input and button
-                messageInput.disabled = false;
-                sendBtn.disabled = false;
-                messageInput.focus();
-                
-                if (data.consultation) {
-                    // Add assistant response with markdown support
-                    const assistantMessageDiv = document.createElement('div');
-                    assistantMessageDiv.className = 'message assistant';
-                    const responseText = data.consultation.response || '';
-                    // Render markdown if marked.js is available
-                    let renderedResponse = responseText;
-                    if (typeof marked !== 'undefined') {
-                        try {
-                            renderedResponse = marked.parse(responseText);
-                        } catch (e) {
-                            console.warn('Markdown parsing failed:', e);
+                .then(response => {
+                    if (!response.ok) {
+                        return response.json().then(err => Promise.reject(err));
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    // Hide loading indicator
+                    document.getElementById('loading-indicator').classList.remove('show');
+
+                    // Re-enable input and button
+                    messageInput.disabled = false;
+                    sendBtn.disabled = false;
+                    messageInput.focus();
+
+                    if (data.consultation) {
+                        // Add assistant response with markdown support
+                        const assistantMessageDiv = document.createElement('div');
+                        assistantMessageDiv.className = 'message assistant';
+                        const responseText = data.consultation.response || '';
+                        // Render markdown if marked.js is available
+                        let renderedResponse = responseText;
+                        if (typeof marked !== 'undefined') {
+                            try {
+                                renderedResponse = marked.parse(responseText);
+                            } catch (e) {
+                                console.warn('Markdown parsing failed:', e);
+                                renderedResponse = escapeHtml(responseText).replace(/\n/g, '<br>');
+                            }
+                        } else {
                             renderedResponse = escapeHtml(responseText).replace(/\n/g, '<br>');
                         }
-                    } else {
-                        renderedResponse = escapeHtml(responseText).replace(/\n/g, '<br>');
+                        assistantMessageDiv.innerHTML = `<strong>Counselor:</strong><div class="message-content">${renderedResponse}</div>`;
+                        document.getElementById('chat-messages').appendChild(assistantMessageDiv);
+
+                        // Update session ID if needed
+                        if (data.session_id) {
+                            sessionId = data.session_id;
+                            document.getElementById('session-id').value = sessionId;
+                        }
+                    } else if (data.error) {
+                        // Show error message
+                        const errorDiv = document.createElement('div');
+                        errorDiv.className = 'message assistant';
+                        errorDiv.style.borderLeft = '4px solid #d32f2f';
+                        const errorMsg = data.consultation?.response || data.error || "I'm sorry, I'm having trouble responding right now. Please try again in a moment.";
+                        errorDiv.innerHTML = `<strong>Counselor:</strong><div class="message-content">${escapeHtml(errorMsg)}</div>`;
+                        document.getElementById('chat-messages').appendChild(errorDiv);
                     }
-                    assistantMessageDiv.innerHTML = `<strong>Counselor:</strong><div class="message-content">${renderedResponse}</div>`;
-                    document.getElementById('chat-messages').appendChild(assistantMessageDiv);
-                    
-                    // Update session ID if needed
-                    if (data.session_id) {
-                        sessionId = data.session_id;
-                        document.getElementById('session-id').value = sessionId;
-                    }
-                } else if (data.error) {
+
+                    // Smart scroll to bottom
+                    setTimeout(smartScrollToBottom, 100);
+                })
+                .catch(error => {
+                    console.error('Error sending message:', error);
+
+                    // Hide loading indicator
+                    document.getElementById('loading-indicator').classList.remove('show');
+
+                    // Re-enable input and button
+                    messageInput.disabled = false;
+                    sendBtn.disabled = false;
+                    messageInput.focus();
+
                     // Show error message
                     const errorDiv = document.createElement('div');
                     errorDiv.className = 'message assistant';
                     errorDiv.style.borderLeft = '4px solid #d32f2f';
-                    const errorMsg = data.consultation?.response || data.error || "I'm sorry, I'm having trouble responding right now. Please try again in a moment.";
+                    const errorMsg = error.error || error.message || "I'm sorry, I'm having trouble responding right now. Please try again in a moment.";
                     errorDiv.innerHTML = `<strong>Counselor:</strong><div class="message-content">${escapeHtml(errorMsg)}</div>`;
                     document.getElementById('chat-messages').appendChild(errorDiv);
-                }
-                
-                // Smart scroll to bottom
-                setTimeout(smartScrollToBottom, 100);
-            })
-            .catch(error => {
-                console.error('Error sending message:', error);
-                
-                // Hide loading indicator
-                document.getElementById('loading-indicator').classList.remove('show');
-                
-                // Re-enable input and button
-                messageInput.disabled = false;
-                sendBtn.disabled = false;
-                messageInput.focus();
-                
-                // Show error message
-                const errorDiv = document.createElement('div');
-                errorDiv.className = 'message assistant';
-                errorDiv.style.borderLeft = '4px solid #d32f2f';
-                const errorMsg = error.error || error.message || "I'm sorry, I'm having trouble responding right now. Please try again in a moment.";
-                errorDiv.innerHTML = `<strong>Counselor:</strong><div class="message-content">${escapeHtml(errorMsg)}</div>`;
-                document.getElementById('chat-messages').appendChild(errorDiv);
-                
-                // Smart scroll to bottom
-                setTimeout(smartScrollToBottom, 100);
-            });
+
+                    // Smart scroll to bottom
+                    setTimeout(smartScrollToBottom, 100);
+                });
         });
-        
+
         // Utility function to escape HTML
         function escapeHtml(text) {
             const div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
         }
-        
+
         // Auto-scroll to bottom when new messages arrive
         function scrollToBottom() {
             const chatMessages = document.getElementById('chat-messages');
             chatMessages.scrollTop = chatMessages.scrollHeight;
         }
-        
+
         // Enhanced scroll behavior
         const chatMessages = document.getElementById('chat-messages');
         let isUserScrolling = false;
         let scrollTimeout;
-        
-        chatMessages.addEventListener('scroll', function() {
+
+        chatMessages.addEventListener('scroll', function () {
             isUserScrolling = true;
             clearTimeout(scrollTimeout);
             scrollTimeout = setTimeout(() => {
                 isUserScrolling = false;
             }, 1000);
         });
-        
+
         // Only auto-scroll if user is near bottom
         function smartScrollToBottom() {
             const chatMessages = document.getElementById('chat-messages');
             const threshold = 100; // pixels from bottom
             const isNearBottom = chatMessages.scrollHeight - chatMessages.scrollTop - chatMessages.clientHeight < threshold;
-            
+
             if (!isUserScrolling || isNearBottom) {
                 scrollToBottom();
             }
         }
-        
+
         // HTMX listeners removed - we use fetch API directly for consultation messages
-        
+
         // Update HTMX to send JSON
-        document.body.addEventListener('htmx:configRequest', function(event) {
+        document.body.addEventListener('htmx:configRequest', function (event) {
             if (event.detail.path === '/api/consultation/message') {
                 event.detail.headers['Content-Type'] = 'application/json';
                 const formData = new FormData(event.detail.elt);
@@ -477,5 +517,5 @@
         });
     </script>
 </body>
-</html>
 
+</html>

@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crisis Resources - Campus Support</title>
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+
+<body>
+    <!-- Mobile Sidebar Overlay -->
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+    <!-- Mobile Sidebar -->
+    <div class="mobile-sidebar" id="mobile-sidebar">
+        <div class="sidebar-header">
+            <a href="/dashboard" class="logo">Campus Support</a>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="/dashboard">📊 Dashboard</a>
+            <a href="/mood">😊 Mood Tracking</a>
+            <a href="/quizzes">📝 Quizzes</a>
+            <a href="/consultation">💬 Consultation</a>
+            <a href="/crisis" class="active">🆘 Crisis Resources</a>
+            <button hx-post="/logout" hx-target="body" class="btn-secondary">🚪 Logout</button>
+        </nav>
+    </div>
+
+    <nav class="navbar">
+        <div class="container">
+            <button class="menu-toggle" id="menu-toggle" aria-label="Toggle menu">
+                <span></span><span></span><span></span>
+            </button>
+            <a href="/dashboard" class="logo">Campus Support</a>
+            <div class="nav-links">
+                <a href="/dashboard">Dashboard</a>
+                <a href="/mood">Mood Tracking</a>
+                <a href="/quizzes">Quizzes</a>
+                <a href="/consultation">Consultation</a>
+                <a href="/crisis" class="active">Crisis Resources</a>
+                <button hx-post="/logout" hx-target="body" class="btn-secondary">Logout</button>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container" style="padding-top: 2rem; padding-bottom: 4rem;">
+
+        <!-- Hero Banner -->
+        <div class="crisis-page-hero">
+            <div class="crisis-page-hero-text">
+                <span class="crisis-page-badge">🆘 Crisis Support</span>
+                <h1>You are not alone.</h1>
+                <p>If you are in distress, struggling, or know someone who is — help is always available. Below are
+                    trusted contacts you can reach at any time.</p>
+            </div>
+            <div class="crisis-page-hero-note">
+                <strong>🚨 Immediate danger?</strong> Call <a href="tel:999">999</a> right now.
+            </div>
+        </div>
+
+        <!-- Emergency Contacts Grid -->
+        <section class="crisis-page-section">
+            <h2 class="crisis-page-section-title">Emergency Contacts</h2>
+            <div class="crisis-page-grid">
+
+                <a href="tel:999" class="crisis-page-card crisis-page-card-red">
+                    <div class="crisis-page-card-top">
+                        <span class="crisis-page-card-emoji">🚨</span>
+                        <span class="crisis-page-urgency-tag">IMMEDIATE</span>
+                    </div>
+                    <h3>Emergency Services</h3>
+                    <p>For immediate threat to life — yours or anyone else's. Police, ambulance, and fire services.</p>
+                    <div class="crisis-page-number">999</div>
+                    <div class="crisis-page-availability">Available 24/7</div>
+                </a>
+
+                <a href="tel:0800723253" class="crisis-page-card crisis-page-card-purple">
+                    <div class="crisis-page-card-top">
+                        <span class="crisis-page-card-emoji">🧠</span>
+                        <span class="crisis-page-urgency-tag crisis-tag-free">FREE</span>
+                    </div>
+                    <h3>Mental Health Hotline</h3>
+                    <p>Free and confidential mental health support by the Kenya Red Cross. Speak to a trained counselor.
+                    </p>
+                    <div class="crisis-page-number">0800 723 253</div>
+                    <div class="crisis-page-availability">Available 24/7 · Toll-free</div>
+                </a>
+
+                <a href="tel:+254722178177" class="crisis-page-card crisis-page-card-green">
+                    <div class="crisis-page-card-top">
+                        <span class="crisis-page-card-emoji">💚</span>
+                        <span class="crisis-page-urgency-tag crisis-tag-free">FREE</span>
+                    </div>
+                    <h3>Befrienders Kenya</h3>
+                    <p>Confidential emotional support for people in distress. No judgment. No advice. Just a listening
+                        ear.</p>
+                    <div class="crisis-page-number">+254 722 178 177</div>
+                    <div class="crisis-page-availability">Available 24/7</div>
+                </a>
+
+                <a href="tel:+254000000000" class="crisis-page-card crisis-page-card-blue">
+                    <div class="crisis-page-card-top">
+                        <span class="crisis-page-card-emoji">🏫</span>
+                    </div>
+                    <h3>Campus Counseling Office</h3>
+                    <p>Your university's student wellness team. Walk in or call to schedule a confidential appointment.
+                    </p>
+                    <div class="crisis-page-number">Campus Ext. 100</div>
+                    <div class="crisis-page-availability">Mon–Fri, 8am–5pm</div>
+                </a>
+
+            </div>
+        </section>
+
+        <!-- Self-Help Resources -->
+        <section class="crisis-page-section">
+            <h2 class="crisis-page-section-title">If You Need A Moment</h2>
+            <div class="crisis-selfhelp-grid">
+
+                <div class="crisis-selfhelp-card">
+                    <div class="crisis-selfhelp-icon">🫁</div>
+                    <h3>Box Breathing</h3>
+                    <p>Inhale for 4 counts. Hold for 4. Exhale for 4. Hold for 4. Repeat 4 times. A simple reset for
+                        your nervous system.</p>
+                </div>
+
+                <div class="crisis-selfhelp-card">
+                    <div class="crisis-selfhelp-icon">🌿</div>
+                    <h3>Ground Yourself</h3>
+                    <p>Name 5 things you can see, 4 you can touch, 3 you hear, 2 you smell, and 1 you taste. The
+                        5-4-3-2-1 technique.</p>
+                </div>
+
+                <div class="crisis-selfhelp-card">
+                    <div class="crisis-selfhelp-icon">💬</div>
+                    <h3>Talk to Our AI</h3>
+                    <p>Sometimes you just need to say it out loud. Our AI counselor is available right now, anonymously,
+                        with no judgment.</p>
+                    <a href="/consultation" class="crisis-selfhelp-action">Start a session →</a>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- Back to Dashboard -->
+        <div style="text-align: center; margin-top: 3rem;">
+            <a href="/dashboard" style="color: #64748b; text-decoration: none; font-size: 0.95rem;">← Back to
+                Dashboard</a>
+        </div>
+
+    </main>
+
+    <script>
+        (function () {
+            const menuToggle = document.getElementById('menu-toggle');
+            const sidebar = document.getElementById('mobile-sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+            function toggleSidebar() {
+                sidebar.classList.toggle('active');
+                overlay.classList.toggle('active');
+                menuToggle.classList.toggle('active');
+                document.body.classList.toggle('sidebar-open');
+            }
+            if (menuToggle) menuToggle.addEventListener('click', toggleSidebar);
+            if (overlay) overlay.addEventListener('click', toggleSidebar);
+        })();
+    </script>
+</body>
+
+</html>

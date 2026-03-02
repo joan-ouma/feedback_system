@@ -1,52 +1,381 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sign Up - Campus Mental Health Support</title>
+    <title>Campus Mental Health Support - Safe, Anonymous, Reliable</title>
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;600;700;800&display=swap"
+        rel="stylesheet">
     <link rel="stylesheet" href="/static/css/style.css">
 </head>
-<body>
-    <div class="auth-container">
-        <div class="auth-card">
-            <h1>Welcome to Campus Support</h1>
-            <p class="subtitle">Your anonymous mental health support platform</p>
-            
-            <div id="signup-form">
-                <form hx-post="/signup" 
-                      hx-target="#signup-form" 
-                      hx-swap="outerHTML"
-                      hx-headers='{"HX-Request": "true"}'>
-                    <div class="form-group">
-                        <label for="display_name">Display Name (Optional)</label>
-                        <input type="text" id="display_name" name="display_name" placeholder="Choose a display name">
-                        <small>This helps personalize your experience. You can remain completely anonymous.</small>
+
+<body class="landing-page">
+
+    <!-- Modern Navbar -->
+    <nav class="landing-nav scrolled">
+        <div class="container landing-nav-container">
+            <a href="/" class="landing-logo">
+                <span class="logo-icon">🌿</span>
+                Campus<span class="logo-highlight">Support</span>
+            </a>
+            <div class="landing-nav-links desktop-only">
+                <a href="#features">Features</a>
+                <a href="#signup-section">Get Started</a>
+                <a href="/login" class="nav-btn-login">Login</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero-section">
+        <div class="container hero-container">
+            <div class="hero-content">
+                <h1 class="hero-title">Your mental wellbeing matters. <br> <span class="gradient-text">Let's talk about
+                        it.</span></h1>
+                <p class="hero-subtitle">Access professional AI counseling, track your mood, and report campus issues
+                    completely anonymously. No email or phone number required.</p>
+
+                <div class="hero-cta-group">
+                    <a href="#signup-section" class="btn-primary btn-large glow-effect">Get Support Now</a>
+                    <a href="#features" class="btn-secondary btn-large btn-outline">Learn More</a>
+                </div>
+
+                <div class="hero-stats">
+                    <div class="stat-item">
+                        <span class="stat-number">24/7</span>
+                        <span class="stat-label">AI Counseling</span>
                     </div>
-                    
-                    <button type="submit" class="btn-primary">Create Anonymous Account</button>
-                </form>
-                
-                <div class="auth-info">
+                    <div class="stat-item">
+                        <span class="stat-number">Zero</span>
+                        <span class="stat-label">Data Tracking</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Hero Image -->
+            <div class="hero-image-wrapper">
+                <img src="/static/img/hero_student.png" alt="Student feeling overwhelmed and stressed"
+                    class="hero-student-img">
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="features-section">
+        <div class="container">
+            <div class="text-center">
+                <h2 class="section-title">Everything you need, <span class="gradient-text">safely.</span></h2>
+                <p class="section-subtitle">We built this platform with your privacy and mental health as our
+                    top
+                    priorities.</p>
+            </div>
+
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon bg-gradient-1">🛡️</div>
+                    <h3 class="feature-title">Absolute Anonymity</h3>
+                    <p class="feature-desc">We use a cryptographic token system. No email, no phone, no
+                        identifiable
+                        information is ever asked.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon bg-gradient-2">🧠</div>
+                    <h3 class="feature-title">AI Counseling</h3>
+                    <p class="feature-desc">Access our trained AI counselor anytime. Designed specifically for
+                        student
+                        mental health challenges.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon bg-gradient-3">📢</div>
+                    <h3 class="feature-title">Campus Feedback</h3>
+                    <p class="feature-desc">Report issues or give feedback to the administration safely. Your
+                        voice
+                        matters, anonymously.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Signup Section -->
+    <section id="signup-section" class="signup-section">
+        <div class="container signup-container">
+            <div class="signup-content">
+                <h2 class="section-title">Ready to take the first step?</h2>
+                <p class="section-subtitle">Generate your unique anonymous token and access the platform
+                    instantly.</p>
+
+                <div class="auth-info landing-auth-info">
                     <h3>How it works:</h3>
                     <ul>
-                        <li>No email or phone required</li>
-                        <li>You'll receive a unique token to access your account</li>
-                        <li>Save your token securely - it's your only way to log back in</li>
-                        <li>All data is completely anonymous</li>
+                        <li>Click "Create Anonymous Account"</li>
+                        <li>You'll instantly receive a unique secure token</li>
+                        <li><strong>Save your token securely.</strong> It's your only way to log back in</li>
                     </ul>
                 </div>
             </div>
-            
-            <div class="auth-footer">
-                <p>Already have a token? <a href="/login">Login here</a></p>
+
+            <div class="signup-form-wrapper">
+                <div class="auth-card premium-glass-card">
+                    <h3>Create Your Account</h3>
+                    <p class="subtitle">No personal details required.</p>
+
+                    <div id="signup-form">
+                        <form hx-post="/signup" hx-target="#signup-form" hx-swap="outerHTML"
+                            hx-headers='{"HX-Request": "true"}'>
+                            <div class="form-group modern-input-group">
+                                <label for="display_name">Display Name (Optional)</label>
+                                <input type="text" id="display_name" name="display_name" class="modern-input"
+                                    placeholder="e.g. BlueFalcon">
+                                <small class="input-hint">Just to personalize your AI chats.</small>
+                            </div>
+
+                            <button type="submit" class="btn-primary btn-full glowing-btn">Create Anonymous
+                                Account
+                                ➔</button>
+                        </form>
+                    </div>
+
+                    <div class="auth-footer landing-auth-footer">
+                        <p>Already have a token? <a href="/login" class="text-link">Login here</a></p>
+                    </div>
+                </div>
             </div>
         </div>
-    </div>
-    
-    <script>
-        // Token display will be shown via HTMX swap, no redirect needed
-    </script>
-</body>
-</html>
+    </section>
 
+    <!-- FAQ Section -->
+    <section id="faq" class="faq-section">
+        <div class="container">
+            <div class="text-center">
+                <h2 class="section-title">Frequently Asked <span class="gradient-text">Questions</span></h2>
+                <p class="section-subtitle">Everything you need to know before getting started.</p>
+            </div>
+
+            <div class="faq-list">
+                <details class="faq-item">
+                    <summary class="faq-question">Is my identity truly anonymous?</summary>
+                    <div class="faq-answer">
+                        <p>Yes, completely. We never ask for your name, email, or phone number. You sign up with a
+                            cryptographically generated token. No one, including us, can trace any activity back to you.
+                        </p>
+                    </div>
+                </details>
+
+                <details class="faq-item">
+                    <summary class="faq-question">What happens if I lose my token?</summary>
+                    <div class="faq-answer">
+                        <p>Your token is the only way to access your account. If you lose it, you will need to create a
+                            new account. We strongly recommend saving it somewhere safe immediately after signup.</p>
+                    </div>
+                </details>
+
+                <details class="faq-item">
+                    <summary class="faq-question">Is the AI counselor a real person?</summary>
+                    <div class="faq-answer">
+                        <p>No, the counselor is an AI trained specifically for student mental health support. It is
+                            designed to listen, offer coping strategies, and suggest campus resources. For urgent
+                            crises, please contact emergency services immediately.</p>
+                    </div>
+                </details>
+
+                <details class="faq-item">
+                    <summary class="faq-question">Who can see my feedback and consultations?</summary>
+                    <div class="faq-answer">
+                        <p>Campus feedback submitted through the platform is reviewed by relevant administrators
+                            anonymously. Your AI consultation sessions are private and are never shared with anyone.</p>
+                    </div>
+                </details>
+
+                <details class="faq-item">
+                    <summary class="faq-question">Is the platform available 24/7?</summary>
+                    <div class="faq-answer">
+                        <p>Yes. The platform and the AI counselor are available at any time of day or night, every day
+                            of the week. Reach out whenever you need support, no appointment required.</p>
+                    </div>
+                </details>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="landing-footer">
+        <div class="container footer-container">
+            <div class="footer-brand">
+                <a href="/" class="landing-logo">
+                    <span class="logo-icon">🌿</span>
+                    Campus<span class="logo-highlight">Support</span>
+                </a>
+                <p class="footer-desc">A safe space for students to seek guidance, track their mood, and provide
+                    feedback.</p>
+            </div>
+            <div class="footer-links">
+                <div class="footer-column">
+                    <h4>Platform</h4>
+                    <a href="#features">Features</a>
+                    <a href="#signup-section">Get Started</a>
+                    <a href="/login">Login</a>
+                </div>
+                <div class="footer-column">
+                    <h4>Support</h4>
+                    <a href="#faq">FAQ</a>
+                    <a href="#">Emergency Contacts</a>
+                    <a href="#">Privacy Policy</a>
+                </div>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2026 Campus Support. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) target.scrollIntoView({ behavior: 'smooth' });
+            });
+        });
+    </script>
+
+    <style>
+        /* Hero illustration to replace the removed chat cards */
+        .hero-illustration {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .illustration-blob {
+            position: relative;
+            width: 380px;
+            height: 380px;
+            background: radial-gradient(circle, rgba(102, 126, 234, 0.12) 0%, rgba(118, 75, 162, 0.08) 70%, transparent 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: blobPulse 6s ease-in-out infinite;
+        }
+
+        @keyframes blobPulse {
+
+            0%,
+            100% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.04);
+            }
+        }
+
+        .illustration-center-icon {
+            font-size: 6rem;
+            animation: gentleFloat 5s ease-in-out infinite;
+        }
+
+        @keyframes gentleFloat {
+
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(-12px);
+            }
+        }
+
+        .illustration-orbit {
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            background: white;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.75rem;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+        }
+
+        .orbit-1 {
+            top: 20px;
+            left: 30px;
+            animation: floatOrbit 6s ease-in-out infinite;
+        }
+
+        .orbit-2 {
+            bottom: 20px;
+            right: 30px;
+            animation: floatOrbit 8s ease-in-out infinite reverse;
+        }
+
+        .orbit-3 {
+            top: 50%;
+            right: 0;
+            transform: translateY(-50%);
+            animation: floatOrbit 7s ease-in-out infinite 1s;
+        }
+
+        @keyframes floatOrbit {
+
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(-10px);
+            }
+        }
+
+        .orbit-3 {
+            transform: translateY(-50%);
+        }
+
+        @keyframes floatOrbit3 {
+
+            0%,
+            100% {
+                transform: translateY(-50%);
+            }
+
+            50% {
+                transform: translateY(calc(-50% - 10px));
+            }
+        }
+
+        .orbit-3 {
+            animation: floatOrbit3 7s ease-in-out infinite 1s;
+        }
+
+        @media (max-width: 992px) {
+            .hero-illustration {
+                display: none;
+            }
+
+            .hero-container {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .hero-cta-group {
+                justify-content: center;
+            }
+
+            .hero-stats {
+                justify-content: center;
+            }
+        }
+    </style>
+</body>
+
+</html>
