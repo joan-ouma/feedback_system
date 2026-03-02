@@ -53,13 +53,21 @@ func main() {
 	moodService := service.NewMoodService(moodRepo, quoteRepo, llmClient)
 	quizService := service.NewQuizService(quizRepo, llmClient)
 
-	// ✅ FIXED: Define templateDir BEFORE using it
-	templateDir := "templates"
-	staticDir := "static"
+	// ✅ FIXED: Define directories dynamically from environment variables for Render compatibility
+	templateDir := os.Getenv("TEMPLATE_DIR")
+	if templateDir == "" {
+		templateDir = "templates"
+	}
+
+	staticDir := os.Getenv("STATIC_DIR")
+	if staticDir == "" {
+		staticDir = "static"
+	}
 
 	// Templates (non-blocking)
 	tmpl := template.New("").Funcs(template.FuncMap{"replace": strings.ReplaceAll})
-	templates, _ := tmpl.ParseGlob("templates/*.html")
+	templatePattern := templateDir + "/*.html"
+	templates, _ := tmpl.ParseGlob(templatePattern)
 
 	// Handlers
 	authHandler, err := handlers.NewAuthHandler(authService, cfg.Server.SessionSecret, templateDir)

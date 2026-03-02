@@ -48,7 +48,7 @@ func NewAuthHandler(authService *service.AuthService, sessionSecret string, temp
 			return len(s)
 		},
 	})
-	
+
 	// Load template files
 	pattern := filepath.Join(templateDir, "*.html")
 	log.Printf("Loading templates from pattern: %s", pattern)
@@ -60,13 +60,13 @@ func NewAuthHandler(authService *service.AuthService, sessionSecret string, temp
 	log.Printf("Successfully loaded templates")
 
 	store := sessions.NewCookieStore([]byte(sessionSecret))
-	
+
 	// Configure cookie options for production (HTTPS)
 	store.Options = &sessions.Options{
 		Path:     "/",
 		MaxAge:   86400 * 30, // 30 days
 		HttpOnly: true,
-		Secure:   false, // Set to true in production with HTTPS
+		Secure:   false,                // Set to true in production with HTTPS
 		SameSite: http.SameSiteLaxMode, // Works with HTTPS and allows cross-site navigation
 	}
 
@@ -84,7 +84,8 @@ func (h *AuthHandler) SignUp(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/html")
 		if err := h.templates.ExecuteTemplate(w, "signup.html", nil); err != nil {
 			// Fallback to file serve if template not found
-			http.ServeFile(w, r, "templates/signup.html")
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte("Error rendering template"))
 			return
 		}
 		return
@@ -132,13 +133,13 @@ func (h *AuthHandler) SignUp(w http.ResponseWriter, r *http.Request) {
 	}
 	session.Values["token"] = token
 	session.Values["user_id"] = user.GetIDString()
-	
+
 	// Set cookie options for production (HTTPS detection)
 	if r.TLS != nil || r.Header.Get("X-Forwarded-Proto") == "https" || r.Header.Get("X-Forwarded-Ssl") == "on" {
 		session.Options.Secure = true
 		session.Options.SameSite = http.SameSiteLaxMode
 	}
-	
+
 	if err := session.Save(r, w); err != nil {
 		log.Printf("Session save error: %v", err)
 		http.Error(w, "Failed to save session: "+err.Error(), http.StatusInternalServerError)
@@ -168,7 +169,7 @@ func (h *AuthHandler) SignUp(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-	
+
 	// Fallback: redirect for non-HTMX requests
 	http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
 }
@@ -179,8 +180,9 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		// Render login page using template
 		w.Header().Set("Content-Type", "text/html")
 		if err := h.templates.ExecuteTemplate(w, "login.html", nil); err != nil {
-			// Fallback to file serve if template not found
-			http.ServeFile(w, r, "templates/login.html")
+			// Fallback to error if template not found
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte("Error rendering template"))
 			return
 		}
 		return
@@ -219,13 +221,13 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	}
 	session.Values["token"] = req.Token
 	session.Values["user_id"] = user.GetIDString()
-	
+
 	// Set cookie options for production (HTTPS detection)
 	if r.TLS != nil || r.Header.Get("X-Forwarded-Proto") == "https" || r.Header.Get("X-Forwarded-Ssl") == "on" {
 		session.Options.Secure = true
 		session.Options.SameSite = http.SameSiteLaxMode
 	}
-	
+
 	if err := session.Save(r, w); err != nil {
 		http.Error(w, "Failed to save session: "+err.Error(), http.StatusInternalServerError)
 		return
@@ -260,4 +262,3 @@ func (h *AuthHandler) RegisterRoutes(router *mux.Router) {
 	router.HandleFunc("/login", h.Login).Methods("GET", "POST")
 	router.HandleFunc("/logout", h.Logout).Methods("POST")
 }
-
